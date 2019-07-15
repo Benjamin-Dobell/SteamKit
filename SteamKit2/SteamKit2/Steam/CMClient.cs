@@ -47,6 +47,20 @@ namespace SteamKit2.Internal
         }
 
         /// <summary>
+        /// Gets the public IP address of this client. This value is assigned after a logon attempt has succeeded.
+        /// This value will be <c>null</c> if the client is logged off of Steam.
+        /// </summary>
+        /// <value>The SteamID.</value>
+        public IPAddress PublicIP { get; private set; }
+
+        /// <summary>
+        /// Gets the country code of our public IP address according to Steam. This value is assigned after a logon attempt has succeeded.
+        /// This value will be <c>null</c> if the client is logged off of Steam.
+        /// </summary>
+        /// <value>The SteamID.</value>
+        public string IPCountryCode { get; private set; }
+
+        /// <summary>
         /// Gets the universe of this client.
         /// </summary>
         /// <value>The universe.</value>
@@ -544,6 +558,8 @@ namespace SteamKit2.Internal
                 SteamID = logonResp.ProtoHeader.steamid;
 
                 CellID = logonResp.Body.cell_id;
+                PublicIP = NetHelpers.GetIPAddress(logonResp.Body.public_ip);
+                IPCountryCode = logonResp.Body.ip_country_code;
 
                 int hbDelay = logonResp.Body.out_of_game_heartbeat_seconds;
 
@@ -559,6 +575,8 @@ namespace SteamKit2.Internal
             SteamID = null;
 
             CellID = null;
+            PublicIP = null;
+            IPCountryCode = null;
 
             heartBeatFunc.Stop();
 

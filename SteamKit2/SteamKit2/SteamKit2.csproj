@@ -119,6 +119,9 @@
     <Compile Include="Steam\Handlers\SteamGameServer\SteamGameServer.cs" />
     <Compile Include="Steam\Handlers\SteamMasterServer\Callbacks.cs" />
     <Compile Include="Steam\Handlers\SteamMasterServer\SteamMasterServer.cs" />
+    <Compile Include="Steam\Handlers\SteamMatchmaking\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamMatchmaking\Lobby.cs" />
+    <Compile Include="Steam\Handlers\SteamMatchmaking\SteamMatchmaking.cs" />
     <Compile Include="Steam\Handlers\SteamScreenshots\Callbacks.cs" />
     <Compile Include="Steam\Handlers\SteamScreenshots\SteamScreenshots.cs" />
     <Compile Include="Steam\Handlers\SteamTrading\Callbacks.cs" />
