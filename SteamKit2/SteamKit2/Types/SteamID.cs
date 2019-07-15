@@ -24,8 +24,8 @@ namespace SteamKit2
 
         public ulong this[ uint bitoffset, ulong valuemask ]
         {
-            get => ( Data >> ( ushort )bitoffset ) & valuemask;
-            set => Data = ( Data & ~( valuemask << ( ushort )bitoffset ) ) | ( ( value & valuemask ) << ( ushort )bitoffset );
+            get { return (Data >> (ushort) bitoffset) & valuemask; }
+            set { Data = (Data & ~(valuemask << (ushort) bitoffset)) | ((value & valuemask) << (ushort) bitoffset); }
         }
     }
 
@@ -129,7 +129,10 @@ namespace SteamKit2
         /// <param name="eUniverse">The universe.</param>
         /// <param name="eAccountType">The account type.</param>
         public SteamID( uint unAccountID, EUniverse eUniverse, EAccountType eAccountType )
-            : this() => Set( unAccountID, eUniverse, eAccountType );
+            : this()
+        {
+            Set(unAccountID, eUniverse, eAccountType);
+        }
 
         /// <inheritdoc />
         /// <summary>
@@ -140,13 +143,19 @@ namespace SteamKit2
         /// <param name="eUniverse">The universe.</param>
         /// <param name="eAccountType">The account type.</param>
         public SteamID( uint unAccountID, uint unInstance, EUniverse eUniverse, EAccountType eAccountType )
-            : this() => InstancedSet( unAccountID, unInstance, eUniverse, eAccountType );
+            : this()
+        {
+            InstancedSet(unAccountID, unInstance, eUniverse, eAccountType);
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SteamID"/> class.
         /// </summary>
         /// <param name="id">The 64bit integer to assign this SteamID from.</param>
-        public SteamID( ulong id ) => this.steamid = new BitVector64( id );
+        public SteamID( ulong id )
+        {
+            this.steamid = new BitVector64(id);
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SteamID"/> class from a Steam2 "STEAM_" rendered form.
@@ -228,8 +237,10 @@ namespace SteamKit2
                 return false;
             }
 
-            if ( !uint.TryParse( m.Groups[ "accountid" ].Value, out var accId ) || 
-                 !uint.TryParse( m.Groups[ "authserver" ].Value, out var authServer ) )
+            uint accId;
+            uint authServer;
+            if ( !uint.TryParse( m.Groups[ "accountid" ].Value, out accId ) ||
+                 !uint.TryParse( m.Groups[ "authserver" ].Value, out authServer ) )
             {
                 return false;
             }
@@ -266,12 +277,14 @@ namespace SteamKit2
                 }
             }
 
-            if ( !uint.TryParse( m.Groups[ "account" ].Value, out var accId ) )
+            uint accId;
+            if ( !uint.TryParse( m.Groups[ "account" ].Value, out accId ) )
             {
                 return false;
             }
 
-            if ( !uint.TryParse( m.Groups[ "universe" ].Value, out var universe ) )
+            uint universe;
+            if ( !uint.TryParse( m.Groups[ "universe" ].Value, out universe ) )
             {
                 return false;
             }
@@ -337,19 +350,28 @@ namespace SteamKit2
         /// Sets the various components of this SteamID from a 64bit integer form.
         /// </summary>
         /// <param name="ulSteamID">The 64bit integer to assign this SteamID from.</param>
-        public void SetFromUInt64( ulong ulSteamID ) => this.steamid.Data = ulSteamID;
+        public void SetFromUInt64( ulong ulSteamID )
+        {
+            this.steamid.Data = ulSteamID;
+        }
 
         /// <summary>
         /// Converts this SteamID into it's 64bit integer form.
         /// </summary>
         /// <returns>A 64bit integer representing this SteamID.</returns>
-        public ulong ConvertToUInt64() => this.steamid.Data;
+        public ulong ConvertToUInt64()
+        {
+            return this.steamid.Data;
+        }
 
         /// <summary>
         /// Returns a static account key used for grouping accounts with differing instances.
         /// </summary>
         /// <returns>A 64bit static account key.</returns>
-        public ulong GetStaticAccountKey() => ( ( ulong )AccountUniverse << 56 ) + ( ( ulong )AccountType << 52 ) + AccountID;
+        public ulong GetStaticAccountKey()
+        {
+            return ((ulong) AccountUniverse << 56) + ((ulong) AccountType << 52) + AccountID;
+        }
 
 
         /// <summary>
@@ -358,7 +380,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is a blank anon account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsBlankAnonAccount => this.AccountID == 0 && IsAnonAccount && this.AccountInstance == 0;
+        public bool IsBlankAnonAccount
+        {
+            get { return this.AccountID == 0 && IsAnonAccount && this.AccountInstance == 0; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is a game server account.
@@ -366,7 +391,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is a game server account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsGameServerAccount => this.AccountType == EAccountType.GameServer || this.AccountType == EAccountType.AnonGameServer;
+        public bool IsGameServerAccount
+        {
+            get { return this.AccountType == EAccountType.GameServer || this.AccountType == EAccountType.AnonGameServer; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is a persistent game server account.
@@ -374,7 +402,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is a persistent game server account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsPersistentGameServerAccount => this.AccountType == EAccountType.GameServer;
+        public bool IsPersistentGameServerAccount
+        {
+            get { return this.AccountType == EAccountType.GameServer; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is an anonymous game server account.
@@ -382,7 +413,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is an anon game server account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsAnonGameServerAccount => this.AccountType == EAccountType.AnonGameServer;
+        public bool IsAnonGameServerAccount
+        {
+            get { return this.AccountType == EAccountType.AnonGameServer; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is a content server account.
@@ -390,7 +424,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is a content server account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsContentServerAccount => this.AccountType == EAccountType.ContentServer;
+        public bool IsContentServerAccount
+        {
+            get { return this.AccountType == EAccountType.ContentServer; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is a clan account.
@@ -398,7 +435,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is a clan account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsClanAccount => this.AccountType == EAccountType.Clan;
+        public bool IsClanAccount
+        {
+            get { return this.AccountType == EAccountType.Clan; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is a chat account.
@@ -406,7 +446,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is a chat account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsChatAccount => this.AccountType == EAccountType.Chat;
+        public bool IsChatAccount
+        {
+            get { return this.AccountType == EAccountType.Chat; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is a lobby.
@@ -414,7 +457,10 @@ namespace SteamKit2
         /// <value>
         ///   <c>true</c> if this instance is a lobby; otherwise, <c>false</c>.
         /// </value>
-        public bool IsLobby => this.AccountType == EAccountType.Chat && ( this.AccountInstance & ( uint )ChatInstanceFlags.Lobby ) > 0;
+        public bool IsLobby
+        {
+            get { return this.AccountType == EAccountType.Chat && (this.AccountInstance & (uint) ChatInstanceFlags.Lobby) > 0; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is an individual account.
@@ -422,7 +468,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is an individual account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsIndividualAccount => this.AccountType == EAccountType.Individual || this.AccountType == EAccountType.ConsoleUser;
+        public bool IsIndividualAccount
+        {
+            get { return this.AccountType == EAccountType.Individual || this.AccountType == EAccountType.ConsoleUser; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is an anonymous account.
@@ -430,7 +479,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is an anon account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsAnonAccount => this.AccountType == EAccountType.AnonUser || this.AccountType == EAccountType.AnonGameServer;
+        public bool IsAnonAccount
+        {
+            get { return this.AccountType == EAccountType.AnonUser || this.AccountType == EAccountType.AnonGameServer; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is an anonymous user account.
@@ -438,7 +490,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is an anon user account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsAnonUserAccount => this.AccountType == EAccountType.AnonUser;
+        public bool IsAnonUserAccount
+        {
+            get { return this.AccountType == EAccountType.AnonUser; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is a console user account.
@@ -446,7 +501,10 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is a console user account; otherwise, <c>false</c>.
         /// </value>
-        public bool IsConsoleUserAccount => this.AccountType == EAccountType.ConsoleUser;
+        public bool IsConsoleUserAccount
+        {
+            get { return this.AccountType == EAccountType.ConsoleUser; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is valid.
@@ -494,9 +552,10 @@ namespace SteamKit2
         /// </value>
         public uint AccountID
         {
-            get => ( uint )steamid[ 0, 0xFFFFFFFF ];
-            set => steamid[ 0, 0xFFFFFFFF ] = value;
+            get { return (uint) steamid[0, 0xFFFFFFFF]; }
+            set { steamid[0, 0xFFFFFFFF] = value; }
         }
+
         /// <summary>
         /// Gets or sets the account instance.
         /// </summary>
@@ -505,9 +564,10 @@ namespace SteamKit2
         /// </value>
         public uint AccountInstance
         {
-            get => ( uint )steamid[ 32, 0xFFFFF ];
-            set => steamid[ 32, 0xFFFFF ] = ( ulong )value;
+            get { return (uint) steamid[32, 0xFFFFF]; }
+            set { steamid[32, 0xFFFFF] = (ulong) value; }
         }
+
         /// <summary>
         /// Gets or sets the account type.
         /// </summary>
@@ -516,9 +576,10 @@ namespace SteamKit2
         /// </value>
         public EAccountType AccountType
         {
-            get => ( EAccountType )steamid[ 52, 0xF ];
-            set => steamid[ 52, 0xF ] = ( ulong )value;
+            get { return (EAccountType) steamid[52, 0xF]; }
+            set { steamid[52, 0xF] = (ulong) value; }
         }
+
         /// <summary>
         /// Gets or sets the account universe.
         /// </summary>
@@ -527,8 +588,8 @@ namespace SteamKit2
         /// </value>
         public EUniverse AccountUniverse
         {
-            get => ( EUniverse )steamid[ 56, 0xFF ];
-            set => steamid[ 56, 0xFF ] = ( ulong )value;
+            get { return (EUniverse) steamid[56, 0xFF]; }
+            set { steamid[56, 0xFF] = (ulong) value; }
         }
 
         /// <summary>
@@ -603,7 +664,8 @@ namespace SteamKit2
 
         string RenderSteam3()
         {
-            if ( !AccountTypeChars.TryGetValue( AccountType, out var accountTypeChar ) )
+            char accountTypeChar;
+            if (!AccountTypeChars.TryGetValue(AccountType, out accountTypeChar))
             {
                 accountTypeChar = UnknownAccountTypeChar;
             }
@@ -648,7 +710,10 @@ namespace SteamKit2
         /// <returns>
         /// A <see cref="string"/> that represents this instance.
         /// </returns>
-        public override string ToString() => Render();
+        public override string ToString()
+        {
+            return Render();
+        }
 
         /// <summary>
         /// Performs an implicit conversion from <see cref="SteamKit2.SteamID"/> to <see cref="ulong"/>.
@@ -674,7 +739,10 @@ namespace SteamKit2
         /// <returns>
         /// The result of the conversion.
         /// </returns>
-        public static implicit operator SteamID( ulong id ) => new SteamID( id );
+        public static implicit operator SteamID( ulong id )
+        {
+            return new SteamID(id);
+        }
 
         /// <summary>
         /// Determines whether the specified <see cref="object"/> is equal to this instance.
@@ -690,11 +758,12 @@ namespace SteamKit2
                 return false;
             }
 
-            if ( !( obj is SteamID sid ) )
+            if ( !( obj is SteamID ) )
             {
                 return false;
             }
 
+            SteamID sid = (SteamID) obj;
             return steamid.Data == sid.steamid.Data;
         }
 

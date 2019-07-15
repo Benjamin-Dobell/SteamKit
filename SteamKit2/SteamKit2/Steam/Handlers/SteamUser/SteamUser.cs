@@ -492,7 +492,9 @@ namespace SteamKit2
                 throw new ArgumentNullException( nameof(packetMsg) );
             }
 
-            bool haveFunc = dispatchMap.TryGetValue( packetMsg.MsgType, out var handlerFunc );
+            Action<IPacketMsg> handlerFunc;
+
+            bool haveFunc = dispatchMap.TryGetValue(packetMsg.MsgType, out handlerFunc);
 
             if ( !haveFunc )
             {

@@ -22,7 +22,7 @@ namespace SteamKit2
     /// </summary>
     public class RSACrypto : IDisposable
     {
-        RSA rsa;
+        RSACryptoServiceProvider rsa;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SteamKit2.RSACrypto"/> class.
@@ -37,7 +37,7 @@ namespace SteamKit2
 
             AsnKeyParser keyParser = new AsnKeyParser( key );
 
-            rsa = RSA.Create();
+            rsa = new RSACryptoServiceProvider();
             rsa.ImportParameters( keyParser.ParseRSAPublicKey() );
         }
 
@@ -53,7 +53,7 @@ namespace SteamKit2
                 throw new ArgumentNullException( nameof(input) );
             }
 
-            return rsa.Encrypt( input, RSAEncryptionPadding.OaepSHA1 );
+            return rsa.Encrypt( input, true );
         }
 
         /// <summary>
@@ -305,7 +305,8 @@ namespace SteamKit2
             {
                 throw new ArgumentNullException( nameof(key) );
             }
-            
+
+            byte[] _;
             return SymmetricDecrypt( input, key, out _ );
         }
 
@@ -333,7 +334,8 @@ namespace SteamKit2
             var truncatedKeyForHmac = new byte[ 16 ];
             Array.Copy( key, 0, truncatedKeyForHmac, 0, truncatedKeyForHmac.Length );
 
-            var plaintextData = SymmetricDecrypt( input, key, out var iv );
+            byte[] iv;
+            var plaintextData = SymmetricDecrypt( input, key, out iv );
 
             // validate HMAC
             byte[] hmacBytes;
@@ -528,14 +530,11 @@ namespace SteamKit2
         /// </summary>
         public static byte[] GenerateRandomBlock( int size )
         {
-            using ( var rng = RandomNumberGenerator.Create() )
-            {
-                var block = new byte[ size ];
+            var block = new byte[ size ];
 
-                rng.GetBytes( block );
+            new RNGCryptoServiceProvider().GetBytes( block );
 
-                return block;
-            }
+            return block;
         }
 
     }

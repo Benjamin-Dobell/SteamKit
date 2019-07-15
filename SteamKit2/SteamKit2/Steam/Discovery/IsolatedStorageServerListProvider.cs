@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.IsolatedStorage;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 
@@ -31,11 +32,11 @@ namespace SteamKit2.Discovery
         /// <returns>List of servers if persisted, otherwise an empty list</returns>
         public Task<IEnumerable<ServerRecord>> FetchServerListAsync()
         {
-            return Task.Run(() =>
+            return Task.Factory.StartNew(() =>
             {
                 try
                 {
-                    using (var fileStream = isolatedStorage.OpenFile(FileName, FileMode.Open, FileAccess.Read))
+                    using (var fileStream = new IsolatedStorageFileStream(FileName, FileMode.Open, FileAccess.Read, isolatedStorage))
                     {
                         return Serializer.DeserializeItems<BasicServerListProto>(fileStream, PrefixStyle.Base128, 1)
                             .Select(item =>
@@ -50,7 +51,7 @@ namespace SteamKit2.Discovery
                     DebugLog.WriteLine("IsolatedStorageServerListProvider", "Failed to read file {0}: {1}", FileName, ex.Message);
                     return Enumerable.Empty<ServerRecord>();
                 }
-            });
+            }, CancellationToken.None);
         }
 
         /// <summary>
@@ -65,11 +66,11 @@ namespace SteamKit2.Discovery
                 throw new ArgumentNullException(nameof(endpoints));
             }
 
-            return Task.Run(() =>
+            return Task.Factory.StartNew(() =>
             {
                 try
                 {
-                    using (IsolatedStorageFileStream fileStream = isolatedStorage.OpenFile(FileName, FileMode.Create))
+                    using (IsolatedStorageFileStream fileStream = new IsolatedStorageFileStream(FileName, FileMode.Create, isolatedStorage))
                     {
                         Serializer.Serialize(fileStream,
                             endpoints.Select(ep =>
@@ -88,7 +89,7 @@ namespace SteamKit2.Discovery
                 {
                     DebugLog.WriteLine("IsolatedStorageServerListProvider", "Failed to write file {0}: {1}", FileName, ex.Message);
                 }
-            });
+            }, CancellationToken.None);
         }
     }
 }

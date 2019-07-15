@@ -49,7 +49,7 @@ namespace SteamKit2.Util
 						throw new Win32Exception();
 					}
 
-					var extents = Marshal.PtrToStructure<NativeMethods.VOLUME_DISK_EXTENTS>(pointer);
+					var extents = (NativeMethods.VOLUME_DISK_EXTENTS) Marshal.PtrToStructure(pointer, typeof(NativeMethods.VOLUME_DISK_EXTENTS));
 					if ( extents.NumberOfDiskExtents != 1 )
 					{
 						throw new InvalidOperationException( "Unexpected number of disk extents" );
@@ -82,7 +82,7 @@ namespace SteamKit2.Util
 				// 1. Call DeviceIoControl(STORAGE_PROPERTY_QUERY, out STORAGE_DESCRIPTOR_HEADER) to figure out how many bytes
 				// we need to allocate.
 
-				var querySize = Marshal.SizeOf<NativeMethods.STORAGE_PROPERTY_QUERY>();
+				var querySize = Marshal.SizeOf(typeof(NativeMethods.STORAGE_PROPERTY_QUERY));
 				var queryPtr = Marshal.AllocHGlobal( querySize );
 				try
 				{
@@ -93,7 +93,7 @@ namespace SteamKit2.Util
 
 					uint bytesReturned;
 
-					var headerSize = Marshal.SizeOf<NativeMethods.STORAGE_DESCRIPTOR_HEADER>();
+					var headerSize = Marshal.SizeOf(typeof(NativeMethods.STORAGE_DESCRIPTOR_HEADER));
 					var headerPtr = Marshal.AllocHGlobal( headerSize );
 					try
 					{
@@ -102,7 +102,7 @@ namespace SteamKit2.Util
 							throw new Win32Exception();
 						}
 
-						var header = Marshal.PtrToStructure<NativeMethods.STORAGE_DESCRIPTOR_HEADER>( headerPtr );
+						var header = (NativeMethods.STORAGE_DESCRIPTOR_HEADER) Marshal.PtrToStructure( headerPtr, typeof(NativeMethods.STORAGE_DESCRIPTOR_HEADER) );
 						descriptorSize = header.Size;
 					}
 					finally
@@ -121,12 +121,12 @@ namespace SteamKit2.Util
 							throw new Win32Exception();
 						}
 
-						var descriptor = Marshal.PtrToStructure<NativeMethods.STORAGE_DEVICE_DESCRIPTOR>( descriptorPtr);
+						var descriptor = (NativeMethods.STORAGE_DEVICE_DESCRIPTOR) Marshal.PtrToStructure( descriptorPtr, typeof(NativeMethods.STORAGE_DEVICE_DESCRIPTOR) );
 
 						// 3. Figure out where in the blob the serial number is
 						// and read it from there.
 						var serialNumberOffset = descriptor.SerialNumberOffset;
-						var serialNumberPtr = IntPtr.Add( descriptorPtr, ( int )serialNumberOffset );
+						var serialNumberPtr = new IntPtr( ( int ) descriptorPtr + ( int ) serialNumberOffset );
 
 						var serialNumber = Marshal.PtrToStringAnsi( serialNumberPtr );
 						return serialNumber;
@@ -152,7 +152,10 @@ namespace SteamKit2.Util
 			{
 			}
 
-			public override bool IsInvalid => handle == IntPtr.Zero;
+			public override bool IsInvalid
+			{
+				get { return handle == IntPtr.Zero; }
+			}
 
 			protected override bool ReleaseHandle()
 			{

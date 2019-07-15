@@ -59,7 +59,12 @@ namespace SteamKit2
         /// </param>
         public UFSClient( SteamClient steamClient )
         {
-            this.steamClient = steamClient ?? throw new ArgumentNullException( nameof(steamClient) );
+            if (steamClient == null)
+            {
+                throw new ArgumentNullException(nameof(steamClient));
+            }
+
+            this.steamClient = steamClient;
 
             // our default timeout
             ConnectionTimeout = TimeSpan.FromSeconds( 5 );
@@ -115,7 +120,10 @@ namespace SteamKit2
         /// Disconnects this client from the UFS server.
         /// a <see cref="DisconnectedCallback"/> will be posted upon disconnection.
         /// </summary>
-        public void Disconnect() => Disconnect( userInitiated: true );
+        public void Disconnect()
+        {
+            Disconnect(userInitiated: true);
+        }
 
         void Disconnect( bool userInitiated )
         {
@@ -350,7 +358,9 @@ namespace SteamKit2
                 { EMsg.ClientUFSUploadFileFinished, HandleUploadFileFinished },
             };
 
-            if ( !msgDispatch.TryGetValue( packetMsg.MsgType, out var handlerFunc ) )
+            Action<IPacketMsg> handlerFunc;
+
+            if (!msgDispatch.TryGetValue(packetMsg.MsgType, out handlerFunc))
             {
                 return;
             }

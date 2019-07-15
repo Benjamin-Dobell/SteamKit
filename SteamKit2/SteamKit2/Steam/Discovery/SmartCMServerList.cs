@@ -4,7 +4,9 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
+using Theraot.Collections;
 
 namespace SteamKit2.Discovery
 {
@@ -50,7 +52,12 @@ namespace SteamKit2.Discovery
         /// <exception cref="ArgumentNullException">The configuration object is null.</exception>
         public SmartCMServerList( SteamConfiguration configuration )
         {
-            this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            this.configuration = configuration;
 
             servers = new Collection<ServerInfo>();
             listLock = new object();
@@ -71,7 +78,7 @@ namespace SteamKit2.Discovery
                 // if the server list has been populated, no need to perform any additional work
                 if ( servers.Count > 0 )
                 {
-                    listTask = Task.Delay( 0 );
+                    listTask = Task.Factory.StartNew(() => { }, CancellationToken.None);
                 }
                 else if ( listTask == null || listTask.IsFaulted || listTask.IsCanceled )
                 {
@@ -102,7 +109,7 @@ namespace SteamKit2.Discovery
             DebugWrite( "Resolving server list" );
 
             IEnumerable<ServerRecord> serverList = await configuration.ServerListProvider.FetchServerListAsync().ConfigureAwait( false );
-            IReadOnlyCollection<ServerRecord> endpointList = serverList.ToList();
+            IReadOnlyCollection<ServerRecord> endpointList = serverList.AsIReadOnlyCollection();
 
             if ( endpointList.Count == 0 && configuration.AllowDirectoryFetch )
             {
@@ -113,9 +120,9 @@ namespace SteamKit2.Discovery
             if ( endpointList.Count == 0 && configuration.AllowDirectoryFetch )
             {
                 DebugWrite( "Could not query SteamDirectory, falling back to cm0" );
-                var cm0 = await Dns.GetHostAddressesAsync( "cm0.steampowered.com" ).ConfigureAwait( false );
+                var cm0 = await Task.Factory.StartNew(() => Dns.GetHostAddresses( "cm0.steampowered.com")).ConfigureAwait( false );
 
-                endpointList = cm0.Select( ipaddr => ServerRecord.CreateSocketServer( new IPEndPoint(ipaddr, 27017) ) ).ToList();
+                endpointList = cm0.Select( ipaddr => ServerRecord.CreateSocketServer( new IPEndPoint(ipaddr, 27017) ) ).AsIReadOnlyCollection();
             }
 
             DebugWrite( "Resolved {0} servers", endpointList.Count );

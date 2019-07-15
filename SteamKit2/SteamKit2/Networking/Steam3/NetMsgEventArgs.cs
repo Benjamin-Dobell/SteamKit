@@ -13,7 +13,7 @@ namespace SteamKit2
     /// <summary>
     /// Represents data that has been received over the network.
     /// </summary>
-    class NetMsgEventArgs : EventArgs
+    public class NetMsgEventArgs : EventArgs
     {
         public byte[] Data { get; }
         public EndPoint EndPoint { get; }
@@ -25,7 +25,9 @@ namespace SteamKit2
         }
 
         public NetMsgEventArgs WithData( byte[] data )
-            => new NetMsgEventArgs( data, EndPoint );
+        {
+            return new NetMsgEventArgs(data, EndPoint);
+        }
     }
 
 }

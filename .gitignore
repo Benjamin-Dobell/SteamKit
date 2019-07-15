@@ -114,8 +114,10 @@ UpgradeLog*.XML
 boost/
 google/
 zlib/
-protobuf/
 cryptopp/
+
+# Jetbrains (Rider)
+.idea/
 
 # misc
 Thumbs.db

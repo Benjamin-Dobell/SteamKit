@@ -32,19 +32,28 @@ namespace SteamKit2.Internal
         /// <summary>
         /// Bootstrap list of CM servers.
         /// </summary>
-        public SmartCMServerList Servers => Configuration.ServerList;
+        public SmartCMServerList Servers
+        {
+            get { return Configuration.ServerList; }
+        }
 
         /// <summary>
         /// Returns the the local IP of this client.
         /// </summary>
         /// <returns>The local IP.</returns>
-        public IPAddress LocalIP => connection?.GetLocalIP();
+        public IPAddress LocalIP
+        {
+            get { return connection?.GetLocalIP(); }
+        }
 
         /// <summary>
         /// Gets the universe of this client.
         /// </summary>
         /// <value>The universe.</value>
-        public EUniverse Universe => Configuration.Universe;
+        public EUniverse Universe
+        {
+            get { return Configuration.Universe; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this instance is connected to the remote CM server.
@@ -84,7 +93,10 @@ namespace SteamKit2.Internal
         /// <value>
         /// The connection timeout.
         /// </value>
-        public TimeSpan ConnectionTimeout => Configuration.ConnectionTimeout;
+        public TimeSpan ConnectionTimeout
+        {
+            get { return Configuration.ConnectionTimeout; }
+        }
 
         /// <summary>
         /// Gets or sets the network listening interface. Use this for debugging only.
@@ -111,7 +123,12 @@ namespace SteamKit2.Internal
         /// <exception cref="ArgumentNullException">The configuration object is <c>null</c></exception>
         public CMClient( SteamConfiguration configuration )
         {
-            Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            Configuration = configuration;
             serverMap = new Dictionary<EServerType, HashSet<IPEndPoint>>();
 
             heartBeatFunc = new ScheduledFunction( () =>
@@ -194,7 +211,10 @@ namespace SteamKit2.Internal
         /// <summary>
         /// Disconnects this client.
         /// </summary>
-        public void Disconnect() => Disconnect( userInitiated: true ); 
+        public void Disconnect()
+        {
+            Disconnect(userInitiated: true);
+        }
 
         void Disconnect( bool userInitiated)
         {
@@ -279,7 +299,8 @@ namespace SteamKit2.Internal
         /// <returns>List of server endpoints</returns>
         public List<IPEndPoint> GetServersOfType( EServerType type )
         {
-            if ( !serverMap.TryGetValue( type, out var set ) )
+            HashSet<IPEndPoint> set;
+            if ( !serverMap.TryGetValue( type, out set ) )
                 return new List<IPEndPoint>();
 
             return set.ToList();
@@ -560,7 +581,8 @@ namespace SteamKit2.Internal
             {
                 var type = ( EServerType )server.server_type;
 
-                if ( !serverMap.TryGetValue( type, out var endpointSet ) )
+                HashSet<IPEndPoint> endpointSet;
+                if ( !serverMap.TryGetValue( type, out endpointSet ) )
                 {
                     serverMap[type] = endpointSet = new HashSet<IPEndPoint>();
                 }

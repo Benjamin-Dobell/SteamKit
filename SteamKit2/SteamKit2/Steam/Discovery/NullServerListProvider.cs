@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -14,7 +15,9 @@ namespace SteamKit2.Discovery
         /// </summary>
         /// <returns>Empty server list</returns>
         public Task<IEnumerable<ServerRecord>> FetchServerListAsync()
-            => Task.FromResult(Enumerable.Empty<ServerRecord>());
+        {
+            return Task.FromResult(Enumerable.Empty<ServerRecord>());
+        }
 
         /// <summary>
         /// No-op implementation that does not persist server list
@@ -22,6 +25,8 @@ namespace SteamKit2.Discovery
         /// <param name="endpoints">Server list</param>
         /// <returns>Completed task</returns>
         public Task UpdateServerListAsync(IEnumerable<ServerRecord> endpoints)
-            => Task.CompletedTask;
+        {
+            return Task.FromResult(new object());
+        }
     }
 }

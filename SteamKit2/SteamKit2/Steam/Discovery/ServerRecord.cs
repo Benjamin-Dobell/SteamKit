@@ -10,7 +10,12 @@ namespace SteamKit2.Discovery
     {
         internal ServerRecord(EndPoint endPoint, ProtocolTypes protocolTypes)
         {
-            EndPoint = endPoint ?? throw new ArgumentNullException(nameof(endPoint));
+            if (endPoint == null)
+            {
+                throw new ArgumentNullException(nameof(endPoint));
+            }
+
+            EndPoint = endPoint;
             ProtocolTypes = protocolTypes;
         }
 
@@ -30,17 +35,18 @@ namespace SteamKit2.Discovery
         /// <returns>The <see cref="IPAddress"/> of the associated endpoint.</returns>
         public string GetHost()
         {
-            switch (EndPoint)
+            if (EndPoint is IPEndPoint)
             {
-                case IPEndPoint ipep:
-                    return ipep.Address.ToString();
-
-                case DnsEndPoint dns:
-                    return dns.Host;
-
-                default:
-                    throw new InvalidOperationException("Unknown endpoint type.");
+                IPEndPoint ipep = (IPEndPoint) EndPoint;
+                return ipep.Address.ToString();
             }
+            else if (EndPoint is DnsEndPoint)
+            {
+                DnsEndPoint dns = (DnsEndPoint) EndPoint;
+                return dns.Host;
+            }
+
+            throw new InvalidOperationException("Unknown endpoint type.");
         }
 
         /// <summary>
@@ -49,17 +55,18 @@ namespace SteamKit2.Discovery
         /// <returns>The port numer of the associated endpoint.</returns>
         public int GetPort()
         {
-            switch (EndPoint)
+            if (EndPoint is IPEndPoint)
             {
-                case IPEndPoint ipep:
-                    return ipep.Port;
-
-                case DnsEndPoint dns:
-                    return dns.Port;
-
-                default:
-                    throw new InvalidOperationException("Unreachable code");
+                IPEndPoint ipep = (IPEndPoint) EndPoint;
+                return ipep.Port;
             }
+            else if (EndPoint is DnsEndPoint)
+            {
+                DnsEndPoint dns = (DnsEndPoint) EndPoint;
+                return dns.Port;
+            }
+
+            throw new InvalidOperationException("Unreachable code");
         }
 
         /// <summary>
@@ -71,7 +78,8 @@ namespace SteamKit2.Discovery
         /// <returns></returns>
         public static ServerRecord CreateServer(string host, int port, ProtocolTypes protocolTypes)
         {
-            if (IPAddress.TryParse(host, out var address))
+            IPAddress address;
+            if (IPAddress.TryParse(host, out address))
             {
                 return new ServerRecord(new IPEndPoint(address, port), protocolTypes);
             }
@@ -85,7 +93,9 @@ namespace SteamKit2.Discovery
         /// <param name="endPoint">The IP address and port of the server.</param>
         /// <returns>A new <see cref="ServerRecord"/> instance</returns>
         public static ServerRecord CreateSocketServer(IPEndPoint endPoint)
-            => new ServerRecord(endPoint, ProtocolTypes.Tcp | ProtocolTypes.Udp);
+        {
+            return new ServerRecord(endPoint, ProtocolTypes.Tcp | ProtocolTypes.Udp);
+        }
 
         /// <summary>
         /// Creates a Socket server given an IP endpoint.
@@ -95,7 +105,8 @@ namespace SteamKit2.Discovery
         /// <returns><c>true</c> if the address was able to be parsed, <c>false</c> otherwise.</returns>
         public static bool TryCreateSocketServer(string address, out ServerRecord serverRecord)
         {
-            if (!NetHelpers.TryParseIPEndPoint(address, out var endPoint))
+            IPEndPoint endPoint;
+            if (!NetHelpers.TryParseIPEndPoint(address, out endPoint))
             {
                 serverRecord = default(ServerRecord);
                 return false;
@@ -126,7 +137,8 @@ namespace SteamKit2.Discovery
                 var hostname = address.Substring(0, indexOfColon);
                 var portNumber = address.Substring(indexOfColon + 1);
 
-                if (!int.TryParse(portNumber, out var port))
+                int port;
+                if (!int.TryParse(portNumber, out port))
                 {
                     throw new ArgumentException("Port number must be a valid integer value.", nameof(address));
                 }
@@ -176,9 +188,15 @@ namespace SteamKit2.Discovery
         /// <param name="obj"></param>
         /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
         public override bool Equals(object obj)
-            => obj is ServerRecord other &&
-               EndPoint.Equals(other.EndPoint) &&
-               ProtocolTypes == other.ProtocolTypes;
+        {
+            if (obj is ServerRecord)
+            {
+                ServerRecord other = (ServerRecord) obj;
+                return EndPoint.Equals(other.EndPoint) && ProtocolTypes == other.ProtocolTypes;
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Hash function

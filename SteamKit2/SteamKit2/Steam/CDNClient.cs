@@ -448,8 +448,10 @@ namespace SteamKit2
         /// <returns>A <see cref="DepotManifest"/> instance that contains information about the files present within a depot.</returns>
         public async Task<DepotManifest> DownloadManifestAsync( uint depotId, ulong manifestId )
         {
-            depotCdnAuthKeys.TryGetValue( depotId, out var cdnToken );
-            depotKeys.TryGetValue( depotId, out var depotKey );
+            string cdnToken;
+            depotCdnAuthKeys.TryGetValue( depotId, out cdnToken );
+            byte[] depotKey;
+            depotKeys.TryGetValue( depotId, out depotKey );
 
             return await DownloadManifestCoreAsync( depotId, manifestId, connectedServer, cdnToken, depotKey ).ConfigureAwait(false);
         }
@@ -515,8 +517,10 @@ namespace SteamKit2
                 throw new ArgumentException( "Chunk must have a ChunkID.", nameof(chunk) );
             }
 
-            depotCdnAuthKeys.TryGetValue( depotId, out var cdnToken );
-            depotKeys.TryGetValue( depotId, out var depotKey );
+            string cdnToken;
+            depotCdnAuthKeys.TryGetValue( depotId, out cdnToken );
+            byte[] depotKey;
+            depotKeys.TryGetValue( depotId, out depotKey );
 
             return await DownloadDepotChunkCoreAsync( depotId, chunk, connectedServer, cdnToken, depotKey ).ConfigureAwait( false );
         }

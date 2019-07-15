@@ -15,7 +15,7 @@ using SteamKit2.Internal;
 
 namespace SteamKit2
 {
-    class UdpConnection : IConnection
+    public class UdpConnection : IConnection
     {
         private enum State
         {
@@ -99,6 +99,12 @@ namespace SteamKit2
             state = (int)State.Disconnected;
         }
 
+        public UdpConnection(Socket boundSocket)
+        {
+            sock = boundSocket;
+            state = (int)State.Disconnected;
+        }
+
         public event EventHandler<NetMsgEventArgs> NetMsgReceived;
 
         public event EventHandler Connected;
@@ -107,7 +113,10 @@ namespace SteamKit2
 
         public EndPoint CurrentEndPoint { get; private set; }
 
-        public ProtocolTypes ProtocolTypes => ProtocolTypes.Udp;
+        public ProtocolTypes ProtocolTypes
+        {
+            get { return ProtocolTypes.Udp; }
+        }
 
         /// <summary>
         /// Connects to the specified CM server.
@@ -468,7 +477,7 @@ namespace SteamKit2
 
             if ( sock != null )
             {
-                sock.Dispose();
+                sock.Close();
             }
 
             DebugLog.WriteLine("UdpConnection", "Calling OnDisconnected");
@@ -609,6 +618,8 @@ namespace SteamKit2
         }
 
         public IPAddress GetLocalIP()
-            => NetHelpers.GetLocalIP(sock);
+        {
+            return NetHelpers.GetLocalIP(sock);
+        }
     }
 }

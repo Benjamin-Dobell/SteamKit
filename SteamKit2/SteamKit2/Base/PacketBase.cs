@@ -158,7 +158,11 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is protobuf backed; otherwise, <c>false</c>.
         /// </value>
-        public bool IsProto => false;
+        public bool IsProto
+        {
+            get { return false; }
+        }
+
         /// <summary>
         /// Gets the network message type of this packet message.
         /// </summary>
@@ -235,7 +239,11 @@ namespace SteamKit2
         /// <value>
         /// 	<c>true</c> if this instance is protobuf backed; otherwise, <c>false</c>.
         /// </value>
-        public bool IsProto => false;
+        public bool IsProto
+        {
+            get { return false; }
+        }
+
         /// <summary>
         /// Gets the network message type of this packet message.
         /// </summary>

@@ -46,7 +46,9 @@ namespace SteamKit2
         SteamConfigurationState state;
 
         public SteamConfiguration Build()
-            => new SteamConfiguration(state);
+        {
+            return new SteamConfiguration(state);
+        }
 
         public ISteamConfigurationBuilder WithCellID(uint cellID)
         {
@@ -86,7 +88,12 @@ namespace SteamKit2
 
         public ISteamConfigurationBuilder WithServerListProvider(IServerListProvider provider)
         {
-            state.ServerListProvider = provider ?? throw new ArgumentNullException(nameof(provider));
+            if (provider == null)
+            {
+                throw new ArgumentNullException(nameof(provider));
+            }
+
+            state.ServerListProvider = provider;
             return this;
         }
 
@@ -98,13 +105,23 @@ namespace SteamKit2
 
         public ISteamConfigurationBuilder WithWebAPIBaseAddress(Uri baseAddress)
         {
-            state.WebAPIBaseAddress = baseAddress ?? throw new ArgumentNullException(nameof(baseAddress));
+            if (baseAddress == null)
+            {
+                throw new ArgumentNullException(nameof(baseAddress));
+            }
+
+            state.WebAPIBaseAddress = baseAddress;
             return this;
         }
 
         public ISteamConfigurationBuilder WithWebAPIKey(string webApiKey)
         {
-            state.WebAPIKey = webApiKey ?? throw new ArgumentNullException(nameof(webApiKey));
+            if (webApiKey == null)
+            {
+                throw new ArgumentNullException(nameof(webApiKey));
+            }
+
+            state.WebAPIKey = webApiKey;
             return this;
         }
 

@@ -333,7 +333,9 @@ namespace SteamKit2
                 return false;
             }
 
-            bool haveFunc = dispatchMap.TryGetValue( packetMsg.MsgType, out var handlerFunc );
+            Action<IPacketMsg> handlerFunc;
+
+            bool haveFunc = dispatchMap.TryGetValue(packetMsg.MsgType, out handlerFunc);
 
             if ( haveFunc )
             {

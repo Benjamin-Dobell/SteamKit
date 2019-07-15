@@ -38,7 +38,10 @@ namespace SteamKit2
 
         public EndPoint CurrentEndPoint { get; private set; }
 
-        public ProtocolTypes ProtocolTypes => ProtocolTypes.Tcp;
+        public ProtocolTypes ProtocolTypes
+        {
+            get { return ProtocolTypes.Tcp; }
+        }
 
         private void Shutdown()
         {
@@ -70,13 +73,13 @@ namespace SteamKit2
 
                 if (netWriter != null)
                 {
-                    netWriter.Dispose();
+                    netWriter.Close();
                     netWriter = null;
                 }
 
                 if (netReader != null)
                 {
-                    netReader.Dispose();
+                    netReader.Close();
                     netReader = null;
                 }
 
@@ -88,7 +91,7 @@ namespace SteamKit2
 
                 if (socket != null)
                 {
-                    socket.Dispose();
+                    socket.Close();
                     socket = null;
                 }
             }

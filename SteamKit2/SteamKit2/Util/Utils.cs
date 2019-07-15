@@ -116,37 +116,37 @@ namespace SteamKit2
                         }
                     }
 
-                case PlatformID.Unix:
+                case PlatformID.MacOSX:
                     {
-                        if ( IsMacOS() )
+
+                        switch ( ver.Major )
                         {
-                            switch ( ver.Major )
-                            {
-                                case 11:
-                                    return EOSType.MacOS107; // "Lion"
+                            case 11:
+                                return EOSType.MacOS107; // "Lion"
 
-                                case 12:
-                                    return EOSType.MacOS108; // "Mountain Lion"
+                            case 12:
+                                return EOSType.MacOS108; // "Mountain Lion"
 
-                                case 13:
-                                    return EOSType.MacOS109; // "Mavericks"
+                            case 13:
+                                return EOSType.MacOS109; // "Mavericks"
 
-                                case 14:
-                                   return EOSType.MacOS1010; // "Yosemite"
+                            case 14:
+                                return EOSType.MacOS1010; // "Yosemite"
 
-                                case 15:
-                                    return EOSType.MacOS1011; // El Capitan
+                            case 15:
+                                return EOSType.MacOS1011; // El Capitan
 
-                                case 16:
-                                    return EOSType.MacOS1012; // Sierra
+                            case 16:
+                                return EOSType.MacOS1012; // Sierra
 
-                                default:
-                                    return EOSType.MacOSUnknown;
-                            }
-                        }
-                        else
-                        {
-                            return EOSType.LinuxUnknown;
+                            case 17:
+                                return EOSType.Macos1013; // High Sierra
+
+                            case 18:
+                                return EOSType.Macos1014; // Mojave
+
+                            default:
+                                return EOSType.MacOSUnknown;
                         }
                     }
 
@@ -156,7 +156,9 @@ namespace SteamKit2
         }
 
         public static bool IsMacOS()
-            => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        {
+            return Environment.OSVersion.Platform == PlatformID.MacOSX;
+        }
 
         public static T[] GetAttributes<T>( this Type type, bool inherit = false )
             where T : Attribute
@@ -383,13 +385,15 @@ namespace SteamKit2
                 return false;
             }
 
-            if (!IPAddress.TryParse(endpointParts[0], out var address))
+            IPAddress address;
+            if (!IPAddress.TryParse(endpointParts[0], out address))
             {
                 endPoint = null;
                 return false;
             }
 
-            if (!ushort.TryParse(endpointParts[1], out var port))
+            ushort port;
+            if (!ushort.TryParse(endpointParts[1], out port))
             {
                 endPoint = null;
                 return false;

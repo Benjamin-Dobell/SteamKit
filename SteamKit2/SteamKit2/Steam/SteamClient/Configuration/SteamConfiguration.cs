@@ -50,63 +50,95 @@ namespace SteamKit2
         }
 
         internal static SteamConfiguration CreateDefault()
-            => new SteamConfiguration(SteamConfigurationBuilder.CreateDefaultState());
+        {
+            return new SteamConfiguration(SteamConfigurationBuilder.CreateDefaultState());
+        }
 
         readonly SteamConfigurationState state;
 
         /// <summary>
         /// Whether or not to use the Steam Directory to discover available servers.
         /// </summary>
-        public bool AllowDirectoryFetch => state.AllowDirectoryFetch;
+        public bool AllowDirectoryFetch
+        {
+            get { return state.AllowDirectoryFetch; }
+        }
 
         /// <summary>
         /// The Steam Cell ID to prioritize when connecting.
         /// </summary>
-        public uint CellID => state.CellID;
+        public uint CellID
+        {
+            get { return state.CellID; }
+        }
 
         /// <summary>
         /// The connection timeout used when connecting to Steam serves.
         /// </summary>
-        public TimeSpan ConnectionTimeout => state.ConnectionTimeout;
+        public TimeSpan ConnectionTimeout
+        {
+            get { return state.ConnectionTimeout; }
+        }
 
         /// <summary>
         /// The default persona state flags used when requesting information for a new friend, or
         /// when calling <c>SteamFriends.RequestFriendInfo</c> without specifying flags.
         /// </summary>
-        public EClientPersonaStateFlag DefaultPersonaStateFlags => state.DefaultPersonaStateFlags;
+        public EClientPersonaStateFlag DefaultPersonaStateFlags
+        {
+            get { return state.DefaultPersonaStateFlags; }
+        }
 
         /// <summary>
         /// Factory function to create a user-configured HttpClient.
         /// </summary>
-        public HttpClientFactory HttpClientFactory => state.HttpClientFactory;
+        public HttpClientFactory HttpClientFactory
+        {
+            get { return state.HttpClientFactory; }
+        }
 
         /// <summary>
         /// The supported protocol types to use when attempting to connect to Steam.
         /// </summary>
-        public ProtocolTypes ProtocolTypes => state.ProtocolTypes;
+        public ProtocolTypes ProtocolTypes
+        {
+            get { return state.ProtocolTypes; }
+        }
 
         /// <summary>
         /// The server list provider to use.
         /// </summary>
-        public IServerListProvider ServerListProvider => state.ServerListProvider;
+        public IServerListProvider ServerListProvider
+        {
+            get { return state.ServerListProvider; }
+        }
 
         /// <summary>
         /// The Universe to connect to. This should always be <see cref="EUniverse.Public"/> unless
         /// you work at Valve and are using this internally. If this is you, hello there.
         /// </summary>
-        public EUniverse Universe => state.Universe;
+        public EUniverse Universe
+        {
+            get { return state.Universe; }
+        }
 
         /// <summary>
         /// The base address of the Steam Web API to connect to.
         /// Use of "partner.steam-api.com" requires a Partner API key.
         /// </summary>
-        public Uri WebAPIBaseAddress => state.WebAPIBaseAddress;
+        public Uri WebAPIBaseAddress
+        {
+            get { return state.WebAPIBaseAddress; }
+        }
 
         /// <summary>
         /// An  API key to be used for authorized requests.
         /// Keys can be obtained from https://steamcommunity.com/dev or the Steamworks Partner site.
         /// </summary>
-        public string WebAPIKey => state.WebAPIKey;
+        public string WebAPIKey
+        {
+            get { return state.WebAPIKey; }
+        }
 
         /// <summary>
         /// The server list used for this configuration.

@@ -1,66 +1,242 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AssemblyOriginatorKeyFile>..\..\SteamKit.snk</AssemblyOriginatorKeyFile>
-    <Description>.NET library that aims to interoperate with the Steam network.</Description>
-    <PackageReleaseNotes>Release notes are available at https://github.com/SteamRE/SteamKit/releases/tag/2.2.0-Beta.1</PackageReleaseNotes>
-    <PackageIconUrl>https://raw.github.com/SteamRE/SteamKit/master/Resources/Misc/steamkit_logo_128.png</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/SteamRE/SteamKit</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/SteamRE/SteamKit/blob/master/SteamKit2/SteamKit2/license.txt</PackageLicenseUrl>
-    <RepositoryUrl>https://github.com/SteamRE/SteamKit</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <ProjectGuid>{4B2B0365-DE37-4B65-B614-3E4E7C05147D}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1EE170C5-F8D8-4BA1-A5B4-DBFB5FDC56A1}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SteamKit2</RootNamespace>
+    <AssemblyName>SteamKit2</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SteamKit2.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <DebugType>full</DebugType>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(DebugType)' == 'portable'">
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-
   <ItemGroup>
-    <None Remove="3rd party.txt" />
-    <None Remove="changes.txt" />
-    <None Remove="gpl.txt" />
-    <None Remove="lgpl.txt" />
-    <None Remove="license.txt" />
+    <Compile Include="Base\ClientMsg.cs" />
+    <Compile Include="Base\GC\ClientMsgGC.cs" />
+    <Compile Include="Base\GC\MsgBaseGC.cs" />
+    <Compile Include="Base\GC\PacketBaseGC.cs" />
+    <Compile Include="Base\Generated\ContentManifest.cs" />
+    <Compile Include="Base\Generated\GC\MsgBaseGC.cs" />
+    <Compile Include="Base\Generated\SteamLanguage.cs" />
+    <Compile Include="Base\Generated\SteamLanguageInternal.cs" />
+    <Compile Include="Base\Generated\SteamMsgAppTicket.cs" />
+    <Compile Include="Base\Generated\SteamMsgBase.cs" />
+    <Compile Include="Base\Generated\SteamMsgClientServer.cs" />
+    <Compile Include="Base\Generated\SteamMsgClientServer2.cs" />
+    <Compile Include="Base\Generated\SteamMsgClientServerFriends.cs" />
+    <Compile Include="Base\Generated\SteamMsgClientServerLogin.cs" />
+    <Compile Include="Base\Generated\SteamMsgSiteLicenseClient.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgAccountHardware.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgBroadcast.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgChat.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgCloud.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgCredentials.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgDataPublisher.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgDepotBuilder.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgDeviceAuth.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgEcon.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgFriendMessages.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgGameNotifications.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgGameServers.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgInventory.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgLinkFilter.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgMarket.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgOffline.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgParental.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgParties.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgPartnerApps.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgPhysicalGoods.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgPlayer.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgPublishedFile.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgQMS.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgSecrets.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgShader.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgSiteLicense.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgStore.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgTwoFactor.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgUnifiedBase.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgUserAccount.cs" />
+    <Compile Include="Base\Generated\Unified\SteamMsgVideo.cs" />
+    <Compile Include="Base\Generated\Unified\Steamworks\SteamMsgOAuthSteamworks.cs" />
+    <Compile Include="Base\MsgBase.cs" />
+    <Compile Include="Base\PacketBase.cs" />
+    <Compile Include="Networking\Steam3\DisconnectedEventArgs.cs" />
+    <Compile Include="Networking\Steam3\EnvelopeEncryptedConnection.cs" />
+    <Compile Include="Networking\Steam3\IConnection.cs" />
+    <Compile Include="Networking\Steam3\INetFilterEncryption.cs" />
+    <Compile Include="Networking\Steam3\NetFilterEncryption.cs" />
+    <Compile Include="Networking\Steam3\NetFilterEncryptionWithHMAC.cs" />
+    <Compile Include="Networking\Steam3\NetMsgEventArgs.cs" />
+    <Compile Include="Networking\Steam3\ProtocolType.cs" />
+    <Compile Include="Networking\Steam3\TcpConnection.cs" />
+    <Compile Include="Networking\Steam3\UdpConnection.cs" />
+    <Compile Include="Networking\Steam3\UdpPacket.cs" />
+    <Compile Include="Networking\Steam3\WebSocketConnection.cs" />
+    <Compile Include="Networking\Steam3\WebSocketContext.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Steam\CDNClient.cs" />
+    <Compile Include="Steam\CMClient.cs" />
+    <Compile Include="Steam\Discovery\BasicServerListProto.cs" />
+    <Compile Include="Steam\Discovery\FileStorageServerListProvider.cs" />
+    <Compile Include="Steam\Discovery\IServerListProvider.cs" />
+    <Compile Include="Steam\Discovery\IsolatedStorageServerListProvider.cs" />
+    <Compile Include="Steam\Discovery\NullServerListProvider.cs" />
+    <Compile Include="Steam\Discovery\ServerRecord.cs" />
+    <Compile Include="Steam\Discovery\SmartCMServerList.cs" />
+    <Compile Include="Steam\Handlers\ClientMsgHandler.cs" />
+    <Compile Include="Steam\Handlers\SteamApps\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamApps\SteamApps.cs" />
+    <Compile Include="Steam\Handlers\SteamCloud\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamCloud\SteamCloud.cs" />
+    <Compile Include="Steam\Handlers\SteamFriends\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamFriends\FriendCache.cs" />
+    <Compile Include="Steam\Handlers\SteamFriends\SteamFriends.cs" />
+    <Compile Include="Steam\Handlers\SteamGameCoordinator\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamGameCoordinator\SteamGameCoordinator.cs" />
+    <Compile Include="Steam\Handlers\SteamGameServer\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamGameServer\SteamGameServer.cs" />
+    <Compile Include="Steam\Handlers\SteamMasterServer\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamMasterServer\SteamMasterServer.cs" />
+    <Compile Include="Steam\Handlers\SteamScreenshots\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamScreenshots\SteamScreenshots.cs" />
+    <Compile Include="Steam\Handlers\SteamTrading\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamTrading\SteamTrading.cs" />
+    <Compile Include="Steam\Handlers\SteamUnifiedMessages\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamUnifiedMessages\SteamUnifiedMessages.cs" />
+    <Compile Include="Steam\Handlers\SteamUserStats\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamUserStats\SteamUserStats.cs" />
+    <Compile Include="Steam\Handlers\SteamUser\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamUser\SteamUser.cs" />
+    <Compile Include="Steam\Handlers\SteamWorkshop\Callbacks.cs" />
+    <Compile Include="Steam\Handlers\SteamWorkshop\SteamWorkshop.cs" />
+    <Compile Include="Steam\SteamClient\AsyncJobManager.cs" />
+    <Compile Include="Steam\SteamClient\CallbackMgr\CallbackMgr.cs" />
+    <Compile Include="Steam\SteamClient\CallbackMgr\CallbackMgr_Internals.cs" />
+    <Compile Include="Steam\SteamClient\CallbackMgr\CallbackMsg.cs" />
+    <Compile Include="Steam\SteamClient\Callbacks.cs" />
+    <Compile Include="Steam\SteamClient\Configuration\ISteamConfigurationBuilder.cs" />
+    <Compile Include="Steam\SteamClient\Configuration\SteamConfiguration.cs" />
+    <Compile Include="Steam\SteamClient\Configuration\SteamConfigurationBuilder.cs" />
+    <Compile Include="Steam\SteamClient\Configuration\SteamConfigurationState.cs" />
+    <Compile Include="Steam\SteamClient\SteamClient.cs" />
+    <Compile Include="Steam\UFSClient\Callbacks.cs" />
+    <Compile Include="Steam\UFSClient\UFSClient.cs" />
+    <Compile Include="Steam\WebAPI\SteamConfigurationWebAPIExtensions.cs" />
+    <Compile Include="Steam\WebAPI\SteamDirectory.cs" />
+    <Compile Include="Steam\WebAPI\WebAPI.cs" />
+    <Compile Include="Types\DepotManifest.cs" />
+    <Compile Include="Types\GameID.cs" />
+    <Compile Include="Types\GlobalID.cs" />
+    <Compile Include="Types\JobID.cs" />
+    <Compile Include="Types\KeyValue.cs" />
+    <Compile Include="Types\Manifest.cs" />
+    <Compile Include="Types\MessageObject.cs" />
+    <Compile Include="Types\PubFile.cs" />
+    <Compile Include="Types\SteamID.cs" />
+    <Compile Include="Util\AsnKeyParser.cs" />
+    <Compile Include="Util\Crc32.cs" />
+    <Compile Include="Util\CryptoHelper.cs" />
+    <Compile Include="Util\DebugLog.cs" />
+    <Compile Include="Util\DebugNetworkListener.cs" />
+    <Compile Include="Util\HardwareUtils.cs" />
+    <Compile Include="Util\KeyDictionary.cs" />
+    <Compile Include="Util\LZMA\Common\CRC.cs" />
+    <Compile Include="Util\LZMA\Common\InBuffer.cs" />
+    <Compile Include="Util\LZMA\Common\OutBuffer.cs" />
+    <Compile Include="Util\LZMA\Compress\LZMA\LzmaBase.cs" />
+    <Compile Include="Util\LZMA\Compress\LZMA\LzmaDecoder.cs" />
+    <Compile Include="Util\LZMA\Compress\LZMA\LzmaEncoder.cs" />
+    <Compile Include="Util\LZMA\Compress\LZ\IMatchFinder.cs" />
+    <Compile Include="Util\LZMA\Compress\LZ\LzBinTree.cs" />
+    <Compile Include="Util\LZMA\Compress\LZ\LzInWindow.cs" />
+    <Compile Include="Util\LZMA\Compress\LZ\LzOutWindow.cs" />
+    <Compile Include="Util\LZMA\Compress\RangeCoder\RangeCoder.cs" />
+    <Compile Include="Util\LZMA\Compress\RangeCoder\RangeCoderBit.cs" />
+    <Compile Include="Util\LZMA\Compress\RangeCoder\RangeCoderBitTree.cs" />
+    <Compile Include="Util\LZMA\ICoder.cs" />
+    <Compile Include="Util\MacHelpers.cs" />
+    <Compile Include="Util\ScheduledFunction.cs" />
+    <Compile Include="Util\SimpleConsoleDebugListener.cs" />
+    <Compile Include="Util\StreamHelpers.cs" />
+    <Compile Include="Util\TaskExtensions.cs" />
+    <Compile Include="Util\Utils.cs" />
+    <Compile Include="Util\VZipUtil.cs" />
+    <Compile Include="Util\Win32Helpers.cs" />
+    <Compile Include="Util\ZipUtil.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="3rd party.txt">
-        <Pack>true</Pack>
-        <PackagePath />
-    </Content>
-    <Content Include="changes.txt">
-        <Pack>true</Pack>
-        <PackagePath>readme.txt</PackagePath>
-    </Content>
-    <Content Include="gpl.txt">
-        <Pack>true</Pack>
-        <PackagePath />
-    </Content>
-    <Content Include="lgpl.txt">
-        <Pack>true</Pack>
-        <PackagePath />
-    </Content>
-    <Content Include="license.txt">
-        <Pack>true</Pack>
-        <PackagePath />
-    </Content>
+    <Content Include="Base\Generated\.gitattributes" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-62925-02" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.4.0" />
-    <PackageReference Include="protobuf-net" Version="2.1.0" />
+    <Reference Include="protobuf-net, Version=2.4.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67">
+      <HintPath>..\packages\protobuf-net.2.4.0\lib\net35\protobuf-net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="StringInterpolationBridge, Version=0.9.1.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\packages\StringInterpolationBridge.0.9.1\lib\net20\StringInterpolationBridge.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SuperSocket.ClientEngine, Version=0.10.0.0, Culture=neutral, PublicKeyToken=ee9af13f57f00acc">
+      <HintPath>..\packages\SuperSocket.ClientEngine.Core.0.10.0\lib\net35-client\SuperSocket.ClientEngine.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Theraot.Core, Version=3.0.2.0, Culture=neutral, PublicKeyToken=b1460dff8a28f7a7">
+      <HintPath>..\packages\Theraot.Core.3.0.2\lib\net35\Theraot.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="WebSocket4Net, Version=0.15.2.11, Culture=neutral, PublicKeyToken=eb4e154b696bf72a">
+      <HintPath>..\packages\WebSocket4Net.0.15.2\lib\net35\WebSocket4Net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
-
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\HttpClientPolyfill\HttpClientPolyfill\HttpClientPolyfill.csproj">
+      <Project>{ad8909ad-9cce-4844-b784-2e953bedebe2}</Project>
+      <Name>HttpClientPolyfill</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\protobuf\csharp\src\Google.Protobuf\Google.Protobuf.csproj">
+      <Project>{3792e0d6-e84a-4817-8961-ede2783b36e6}</Project>
+      <Name>Google.Protobuf</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+         Other similar extension points exist, see Microsoft.Common.targets.
+    <Target Name="BeforeBuild">
+    </Target>
+    <Target Name="AfterBuild">
+    </Target>
+    -->
 </Project>

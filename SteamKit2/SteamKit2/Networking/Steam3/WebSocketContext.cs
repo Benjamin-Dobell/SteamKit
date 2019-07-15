@@ -3,10 +3,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using WebSocket4Net;
 
 namespace SteamKit2
 {
@@ -18,93 +17,74 @@ namespace SteamKit2
             {
                 this.connection = connection;
                 EndPoint = endPoint;
-
                 cts = new CancellationTokenSource();
-                socket = new ClientWebSocket();
                 hostAndPort = GetHostAndPort(endPoint);
+
+                var uri = new Uri(FormattableString.Invariant($"wss://{hostAndPort}/cmsocket/"));
+
+                socket = new WebSocket(uri.ToString());
+                socket.DataReceived += OnDataReceived;
+                socket.MessageReceived += OnMessageReceived;
+                socket.Opened += OnOpenHandler;
+                socket.Closed += OnCloseHandler;
+                socket.Error += OnError;
             }
 
             readonly WebSocketConnection connection;
             readonly CancellationTokenSource cts;
-            readonly ClientWebSocket socket;
+            readonly WebSocket socket;
             readonly string hostAndPort;
-            Task runloopTask;
             int disposed;
+
 
             public EndPoint EndPoint { get; }
 
             public void Start(TimeSpan connectionTimeout)
             {
-                runloopTask = RunCore(cts.Token, connectionTimeout).IgnoringCancellation(cts.Token);
+                socket.Open();
             }
-
-            async Task RunCore(CancellationToken cancellationToken, TimeSpan connectionTimeout)
+            private void OnOpenHandler(object sender, EventArgs e)
             {
-                var uri = new Uri(FormattableString.Invariant($"wss://{hostAndPort}/cmsocket/"));
+                OpenWriteCompletedEventArgs eventArgs = (OpenWriteCompletedEventArgs) e;
 
-                using (var timeout = new CancellationTokenSource())
-                using (var combinedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token))
+                if (eventArgs.Error != null)
                 {
-                    timeout.CancelAfter(connectionTimeout);
-
-                    try
-                    {
-                        await socket.ConnectAsync(uri, combinedCancellation.Token).ConfigureAwait(false);
-                    }
-                    catch (TaskCanceledException) when (timeout.IsCancellationRequested)
-                    {
-                        DebugLog.WriteLine(nameof(WebSocketContext), "Time out connecting websocket {0} after {1}", uri, connectionTimeout);
-                        connection.DisconnectCore(userInitiated: false, specificContext: this);
-                        return;
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugLog.WriteLine(nameof(WebSocketContext), "Exception connecting websocket: {0} - {1}", ex.GetType().FullName, ex.Message);
-                        connection.DisconnectCore(userInitiated: false, specificContext: this);
-                        return;
-                    }
+                    Console.Error.WriteLine("Failed to open web socket: " + eventArgs.Error);
                 }
-
-                DebugLog.WriteLine(nameof(WebSocketContext), "Connected to {0}", uri);
-                connection.Connected?.Invoke(connection, EventArgs.Empty);
-
-                while (!cancellationToken.IsCancellationRequested && socket.State == WebSocketState.Open)
+                else
                 {
-                    var packet = await ReadMessageAsync(cancellationToken).ConfigureAwait(false);
-                    if (packet != null && packet.Length > 0)
-                    {
-                        connection.NetMsgReceived?.Invoke(connection, new NetMsgEventArgs(packet, EndPoint));
-                    }
-                }
-
-                if (socket.State == WebSocketState.Open)
-                {
-                    DebugLog.WriteLine(nameof(WebSocketContext), "Closing connection...");
-                    try
-                    {
-                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, default(CancellationToken)).ConfigureAwait(false);
-                    }
-                    catch (Win32Exception ex)
-                    {
-                        DebugLog.WriteLine(nameof(WebSocketContext), "Error closing connection: {0}", ex.Message);
-                    }
+                    connection.Connected?.Invoke(connection, EventArgs.Empty);
                 }
             }
 
-            public async Task SendAsync(byte[] data)
+            private void OnDataReceived(object sender, DataReceivedEventArgs e)
             {
-                var segment = new ArraySegment<byte>(data, 0, data.Length);
-                try
-                {
-                    await socket.SendAsync(segment, WebSocketMessageType.Binary, true, cts.Token).ConfigureAwait(false);
-                }
-                catch (WebSocketException ex)
-                {
-                    DebugLog.WriteLine(nameof(WebSocketContext), "{0} exception when sending message: {1}", ex.GetType().FullName, ex.Message);
-                    connection.DisconnectCore(userInitiated: false, specificContext: this);
-                    return;
-                }
-                DebugLog.WriteLine(nameof(WebSocketContext), "Sent {0} bytes.", data.Length);
+                Console.WriteLine("OnMessageHandler | " + e.Data);
+                connection.NetMsgReceived?.Invoke(connection, new NetMsgEventArgs(e.Data, EndPoint));
+            }
+
+            private void OnMessageReceived(object sender, MessageReceivedEventArgs e)
+            {
+                Console.WriteLine("OnMessageHandler | " + e.Message);
+                connection.NetMsgReceived?.Invoke(connection, new NetMsgEventArgs(System.Text.Encoding.UTF8.GetBytes(e.Message), EndPoint));
+            }
+
+            private void OnCloseHandler(object sender, EventArgs e)
+            {
+                ClosedEventArgs closedEventArgs = (ClosedEventArgs) e;
+                Console.WriteLine("OnCloseHandler | code: " + closedEventArgs.Code + " reason: " + closedEventArgs.Reason);
+                connection.DisconnectCore(userInitiated: false, specificContext: this);
+            }
+
+            private void OnError(object sender, EventArgs e)
+            {
+                ErrorEventArgs errorEventArgs = (ErrorEventArgs) e;
+                Console.Error.WriteLine(errorEventArgs.GetException());
+            }
+
+            public void Send(byte[] data)
+            {
+                socket.Send(data, 0, data.Length);
             }
 
             public void Dispose()
@@ -116,94 +96,31 @@ namespace SteamKit2
 
                 cts.Cancel();
                 cts.Dispose();
-                runloopTask = null;
 
                 socket.Dispose();
             }
 
-            async Task<byte[]> ReadMessageAsync(CancellationToken cancellationToken)
-            {
-                using (var ms = new MemoryStream())
-                {
-                    var buffer = new byte[1024];
-                    var segment = new ArraySegment<byte>(buffer);
-
-                    WebSocketReceiveResult result;
-                    do
-                    {
-                        try
-                        {
-                            result = await socket.ReceiveAsync(segment, cancellationToken).ConfigureAwait(false);
-                        }
-                        catch (ObjectDisposedException)
-                        {
-                            connection.DisconnectCore(userInitiated: cancellationToken.IsCancellationRequested, specificContext: this);
-                            return null;
-                        }
-                        catch (WebSocketException)
-                        {
-                            connection.DisconnectCore(userInitiated: false, specificContext: this);
-                            return null;
-                        }
-                        catch (Win32Exception)
-                        {
-                            connection.DisconnectCore(userInitiated: false, specificContext: this);
-                            return null;
-                        }
-
-                        switch (result.MessageType)
-                        {
-                            case WebSocketMessageType.Binary:
-                                ms.Write(buffer, 0, result.Count);
-                                DebugLog.WriteLine(nameof(WebSocketContext), "Recieved {0} bytes.", result.Count);
-                                break;
-
-                            case WebSocketMessageType.Text:
-                                try
-                                {
-                                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                                    DebugLog.WriteLine(nameof(WebSocketContext), "Recieved websocket text message: \"{0}\"", message);
-                                }
-                                catch
-                                {
-                                    var frameBytes = new byte[result.Count];
-                                    Array.Copy(buffer, 0, frameBytes, 0, result.Count);
-                                    var frameHexBytes = BitConverter.ToString(frameBytes).Replace("-", string.Empty);
-                                    DebugLog.WriteLine(nameof(WebSocketContext), "Recieved websocket text message: 0x{0}", frameHexBytes);
-                                }
-                                break;
-
-                            case WebSocketMessageType.Close:
-                            default:
-                                connection.DisconnectCore(userInitiated: false, specificContext: this);
-                                return null;
-                        }
-                    }
-                    while (!result.EndOfMessage);
-
-                    return ms.ToArray();
-                }
-            }
-
             static string GetHostAndPort(EndPoint endPoint)
             {
-                switch (endPoint)
+                if (endPoint is IPEndPoint)
                 {
-                    case IPEndPoint ipep:
-                        switch (ipep.AddressFamily)
-                        {
-                            case AddressFamily.InterNetwork:
-                                return FormattableString.Invariant($"{ipep.Address}:{ipep.Port}");
+                    IPEndPoint ipep = (IPEndPoint) endPoint;
 
-                            case AddressFamily.InterNetworkV6:
-                                // RFC 2732
-                                return FormattableString.Invariant($"[{ipep.ToString()}]:{ipep.Port}");
-                        }
+                    switch (ipep.AddressFamily)
+                    {
+                        case AddressFamily.InterNetwork:
+                            return FormattableString.Invariant($"{ipep.Address}:{ipep.Port}");
 
-                        break;
+                        case AddressFamily.InterNetworkV6:
+                            // RFC 2732
+                            return FormattableString.Invariant($"[{ipep.ToString()}]:{ipep.Port}");
+                    }
 
-                    case DnsEndPoint dns:
-                        return FormattableString.Invariant($"{dns.Host}:{dns.Port}");
+                }
+                else if (endPoint is DnsEndPoint)
+                {
+                    DnsEndPoint dns = (DnsEndPoint) endPoint;
+                    return FormattableString.Invariant($"{dns.Host}:{dns.Port}");
                 }
 
                 throw new InvalidOperationException("Unsupported endpoint type.");

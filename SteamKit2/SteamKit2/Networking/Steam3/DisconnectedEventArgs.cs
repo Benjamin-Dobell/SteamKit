@@ -9,7 +9,7 @@ using System;
 
 namespace SteamKit2
 {
-    class DisconnectedEventArgs : EventArgs
+    public class DisconnectedEventArgs : EventArgs
     {
         public bool UserInitiated { get; }
 

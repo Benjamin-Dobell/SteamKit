@@ -474,7 +474,7 @@ namespace SteamKit2
         {
             T value;
 
-            if ( Enum.TryParse<T>( this.Value, out value ) == false )
+            if ( EnumEx.TryParse<T>( this.Value, out value ) == false )
             {
                 return defaultValue;
             }

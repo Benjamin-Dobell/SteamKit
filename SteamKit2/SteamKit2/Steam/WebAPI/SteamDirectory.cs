@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using SteamKit2.Discovery;
+using Theraot.Collections;
 
 namespace SteamKit2
 {
@@ -19,7 +20,9 @@ namespace SteamKit2
         /// <param name="configuration">Configuration Object</param>
         /// <returns>A <see cref="System.Threading.Tasks.Task"/> with the Result set to an enumerable list of <see cref="ServerRecord"/>s.</returns>
         public static Task<IReadOnlyCollection<ServerRecord>> LoadAsync( SteamConfiguration configuration )
-            => LoadCoreAsync( configuration, null, CancellationToken.None );
+        {
+            return LoadCoreAsync(configuration, null, CancellationToken.None);
+        }
 
         /// <summary>
         /// Load a list of servers from the Steam Directory.
@@ -28,7 +31,9 @@ namespace SteamKit2
         /// <param name="cancellationToken">Cancellation Token</param>
         /// <returns>A <see cref="System.Threading.Tasks.Task"/> with the Result set to an enumerable list of <see cref="ServerRecord"/>s.</returns>
         public static Task<IReadOnlyCollection<ServerRecord>> LoadAsync( SteamConfiguration configuration, CancellationToken cancellationToken )
-            => LoadCoreAsync( configuration, null, cancellationToken );
+        {
+            return LoadCoreAsync(configuration, null, cancellationToken);
+        }
 
         /// <summary>
         /// Load a list of servers from the Steam Directory.
@@ -38,7 +43,9 @@ namespace SteamKit2
         /// <param name="cancellationToken">Cancellation Token</param>
         /// <returns>A <see cref="System.Threading.Tasks.Task"/> with the Result set to an enumerable list of <see cref="ServerRecord"/>s.</returns>
         public static Task<IReadOnlyCollection<ServerRecord>> LoadAsync( SteamConfiguration configuration, int maxNumServers, CancellationToken cancellationToken )
-            => LoadCoreAsync( configuration, maxNumServers, cancellationToken );
+        {
+            return LoadCoreAsync(configuration, maxNumServers, cancellationToken);
+        }
 
         static async Task<IReadOnlyCollection<ServerRecord>> LoadCoreAsync( SteamConfiguration configuration, int? maxNumServers, CancellationToken cancellationToken )
         {
@@ -77,7 +84,8 @@ namespace SteamKit2
 
                 foreach ( var child in socketList.Children )
                 {
-                    if ( !ServerRecord.TryCreateSocketServer( child.Value, out var record ))
+                    ServerRecord record;
+                    if ( !ServerRecord.TryCreateSocketServer( child.Value, out record ))
                     {
                         continue;
                     }
@@ -90,7 +98,7 @@ namespace SteamKit2
                 serverRecords.Add( ServerRecord.CreateWebSocketServer( child.Value ) );
             }
 
-            return serverRecords.AsReadOnly();
+            return serverRecords.AsIReadOnlyCollection();
         }
     }
 }

@@ -1,3 +1,11 @@
 [submodule "Resources/Protobufs"]
 	path = Resources/Protobufs
 	url = https://github.com/steamdatabase/protobufs.git
+
+[submodule "protobuf"]
+	path = protobuf
+	url = https://github.com/Benjamin-Dobell/protobuf.git
+	branch = net35
+[submodule "HttpClientPolyfill"]
+	path = HttpClientPolyfill
+	url = https://github.com/Benjamin-Dobell/HttpClientPolyfill.git

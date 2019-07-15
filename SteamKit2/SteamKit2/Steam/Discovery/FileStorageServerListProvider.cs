@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 
@@ -19,7 +20,12 @@ namespace SteamKit2.Discovery
         /// </summary>
         public FileStorageServerListProvider(string filename)
         {
-            this.filename = filename ?? throw new ArgumentNullException(nameof(filename));
+            if (filename == null)
+            {
+                throw new ArgumentNullException(nameof(filename));
+            }
+
+            this.filename = filename;
         }
 
         /// <summary>
@@ -28,7 +34,7 @@ namespace SteamKit2.Discovery
         /// <returns>List of servers if persisted, otherwise an empty list</returns>
         public Task<IEnumerable<ServerRecord>> FetchServerListAsync()
         {
-            return Task.Run(() =>
+            return Task.Factory.StartNew(() =>
             {
                 try
                 {
@@ -47,7 +53,7 @@ namespace SteamKit2.Discovery
                     DebugLog.WriteLine("FileStorageServerListProvider", "Failed to read file {0}: {1}", filename, ex.Message);
                     return Enumerable.Empty<ServerRecord>();
                 }
-            });
+            }, CancellationToken.None);
         }
 
         /// <summary>
@@ -62,7 +68,7 @@ namespace SteamKit2.Discovery
                 throw new ArgumentNullException(nameof(endpoints));
             }
 
-            return Task.Run(() =>
+            return Task.Factory.StartNew(() =>
             {
                 try
                 {
@@ -85,7 +91,7 @@ namespace SteamKit2.Discovery
                 {
                     DebugLog.WriteLine("FileStorageServerListProvider", "Failed to write file {0}: {1}", filename, ex.Message);
                 }
-            });
+            }, CancellationToken.None);
         }
     }
 }

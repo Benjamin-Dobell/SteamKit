@@ -72,7 +72,12 @@ namespace SteamKit2
         public void SetPersonaName( string name )
         {
             // cache the local name right away, so that early calls to SetPersonaState don't reset the set name
-            cache.LocalUser.Name = name ?? throw new ArgumentNullException( nameof(name) );
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            cache.LocalUser.Name = name;
 
             var stateMsg = new ClientMsgProtobuf<CMsgClientChangeStatus>( EMsg.ClientChangeStatus );
 
@@ -743,7 +748,8 @@ namespace SteamKit2
                 throw new ArgumentNullException( nameof(packetMsg) );
             }
 
-            bool haveFunc = dispatchMap.TryGetValue( packetMsg.MsgType, out var handlerFunc );
+            Action<IPacketMsg> handlerFunc;
+            bool haveFunc = dispatchMap.TryGetValue( packetMsg.MsgType, out handlerFunc );
 
             if ( !haveFunc )
             {

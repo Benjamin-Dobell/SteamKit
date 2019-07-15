@@ -28,14 +28,21 @@ namespace SteamKit2.GC
         /// <value>
         /// 	<c>true</c> if this instance is protobuf backed; otherwise, <c>false</c>.
         /// </value>
-        public override bool IsProto => true;
+        public override bool IsProto
+        {
+            get { return true; }
+        }
+
         /// <summary>
         /// Gets the network message type of this gc message.
         /// </summary>
         /// <value>
         /// The network message type.
         /// </value>
-        public override uint MsgType => Header.Msg;
+        public override uint MsgType
+        {
+            get { return Header.Msg; }
+        }
 
         /// <summary>
         /// Gets or sets the target job id for this gc message.
@@ -45,9 +52,18 @@ namespace SteamKit2.GC
         /// </value>
         public override JobID TargetJobID
         {
-            get => ProtoHeader.job_id_target;
-            set => ProtoHeader.job_id_target = value ?? throw new ArgumentNullException( nameof(value) );
+            get { return ProtoHeader.job_id_target; }
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+
+                ProtoHeader.job_id_target = value;
+            }
         }
+
         /// <summary>
         /// Gets or sets the source job id for this gc message.
         /// </summary>
@@ -56,15 +72,26 @@ namespace SteamKit2.GC
         /// </value>
         public override JobID SourceJobID
         {
-            get => ProtoHeader.job_id_source;
-            set => ProtoHeader.job_id_source = value ?? throw new ArgumentNullException( nameof(value) );
+            get { return ProtoHeader.job_id_source; }
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+
+                ProtoHeader.job_id_source = value;
+            }
         }
 
 
         /// <summary>
         /// Shorthand accessor for the protobuf header.
         /// </summary>
-        public CMsgProtoBufHeader ProtoHeader => Header.Proto;
+        public CMsgProtoBufHeader ProtoHeader
+        {
+            get { return Header.Proto; }
+        }
 
         /// <summary>
         /// Gets the body structure of this message.
@@ -174,7 +201,10 @@ namespace SteamKit2.GC
         /// <value>
         /// 	<c>true</c> if this instance is protobuf backed; otherwise, <c>false</c>.
         /// </value>
-        public override bool IsProto => false;
+        public override bool IsProto
+        {
+            get { return false; }
+        }
 
         readonly uint msgType;
         /// <summary>
@@ -183,7 +213,10 @@ namespace SteamKit2.GC
         /// <value>
         /// The network message type.
         /// </value>
-        public override uint MsgType => msgType;
+        public override uint MsgType
+        {
+            get { return msgType; }
+        }
 
         /// <summary>
         /// Gets or sets the target job id for this gc message.
@@ -193,9 +226,18 @@ namespace SteamKit2.GC
         /// </value>
         public override JobID TargetJobID
         {
-            get => Header.TargetJobID;
-            set => Header.TargetJobID = value = value ?? throw new ArgumentNullException( nameof(value) );
+            get { return Header.TargetJobID; }
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+
+                Header.TargetJobID = value;
+            }
         }
+
         /// <summary>
         /// Gets or sets the source job id for this gc message.
         /// </summary>
@@ -204,8 +246,16 @@ namespace SteamKit2.GC
         /// </value>
         public override JobID SourceJobID
         {
-            get => Header.SourceJobID;
-            set => Header.SourceJobID = value ?? throw new ArgumentNullException( nameof(value) );
+            get { return Header.SourceJobID; }
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+
+                Header.SourceJobID = value;
+            }
         }
 
 

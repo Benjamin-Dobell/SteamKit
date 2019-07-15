@@ -11,6 +11,7 @@ using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Theraot.Core;
 
 namespace SteamKit2
 {
@@ -32,7 +33,8 @@ namespace SteamKit2
         /// Represents a single interface that exists within the Web API.
         /// This is a dynamic object that allows function calls to interfaces with minimal code.
         /// </summary>
-        public sealed class Interface : DynamicObject, IDisposable
+        // TODO: DynamicObject?
+        public sealed class Interface : /*DynamicObject,*/ IDisposable
         {
             readonly AsyncInterface asyncInterface;
 
@@ -45,8 +47,8 @@ namespace SteamKit2
             /// </value>
             public TimeSpan Timeout
             {
-                get => asyncInterface.Timeout;
-                set => asyncInterface.Timeout = value;
+                get { return asyncInterface.Timeout; }
+                set { asyncInterface.Timeout = value; }
             }
 
 
@@ -68,7 +70,9 @@ namespace SteamKit2
             /// <exception cref="WebAPIRequestException">A network error occurred when performing the request.</exception>
             /// <exception cref="InvalidDataException">An error occured when parsing the response from the WebAPI.</exception>
             public KeyValue Call( string func, int version = 1, Dictionary<string, string> args = null )
-                => Call( HttpMethod.Get, func, version, args );
+            {
+                return Call(HttpMethod.Get, func, version, args);
+            }
 
 
             /// <summary>
@@ -146,18 +150,18 @@ namespace SteamKit2
             /// <exception cref="ArgumentOutOfRangeException">
             /// The function version number specified was out of range.
             /// </exception>
-            public override bool TryInvokeMember( InvokeMemberBinder binder, object[] args, out object result )
-            {
-                bool success = asyncInterface.TryInvokeMember( binder, args, out result );
-
-                if ( success )
-                {
-                    var resultTask = ( Task<KeyValue> )result;
-                    result = resultTask.GetAwaiter().GetResult();
-                }
-
-                return success;
-            }
+//            public override bool TryInvokeMember( InvokeMemberBinder binder, object[] args, out object result )
+//            {
+//                bool success = asyncInterface.TryInvokeMember( binder, args, out result );
+//
+//                if ( success )
+//                {
+//                    var resultTask = ( Task<KeyValue> )result;
+//                    result = resultTask.GetAwaiter().GetResult();
+//                }
+//
+//                return success;
+//            }
         }
 
         /// <summary>
@@ -165,7 +169,8 @@ namespace SteamKit2
         /// This is a dynamic object that allows function calls to interfaces with minimal code.
         /// This version of the <see cref="Interface"/> class makes use of TPL Tasks to provide an asynchronous API.
         /// </summary>
-        public sealed class AsyncInterface : DynamicObject, IDisposable
+        // TODO: DynamicObject?
+        public sealed class AsyncInterface : /*DynamicObject,*/ IDisposable
         {
             internal readonly HttpClient httpClient;
 
@@ -180,8 +185,8 @@ namespace SteamKit2
             /// </value>
             public TimeSpan Timeout
             {
-                    get => httpClient.Timeout;
-                    set => httpClient.Timeout = value;
+                get { return httpClient.Timeout; }
+                set { httpClient.Timeout = value; }
             }
 
             static Regex funcNameRegex = new Regex(
@@ -266,7 +271,7 @@ namespace SteamKit2
                 }
 
                 // append any args
-                paramBuilder.Append( string.Join( "&", args.Select( kvp =>
+                paramBuilder.Append( StringEx.Join( "&", args.Select( kvp =>
                 {
                     // TODO: the WebAPI is a special snowflake that needs to appropriately handle url encoding
                     // this is in contrast to the steam3 content server APIs which use an entirely different scheme of encoding
@@ -353,74 +358,74 @@ namespace SteamKit2
             /// <exception cref="ArgumentOutOfRangeException">
             /// The function version number specified was out of range.
             /// </exception>
-            public override bool TryInvokeMember( InvokeMemberBinder binder, object[] args, out object result )
-            {
-                if ( binder.CallInfo.ArgumentNames.Count != args.Length )
-                {
-                    throw new InvalidOperationException( "Argument mismatch in API call. All parameters must be passed as named arguments." );
-                }
-
-                var apiArgs = new Dictionary<string, string>();
-
-                var requestMethod = HttpMethod.Get;
-
-                // convert named arguments into key value pairs
-                for ( int x = 0 ; x < args.Length ; x++ )
-                {
-                    string argName = binder.CallInfo.ArgumentNames[ x ];
-                    object argValue = args[ x ];
-
-                    // method is a reserved param for selecting the http request method
-                    if ( argName.Equals( "method", StringComparison.OrdinalIgnoreCase ) )
-                    {
-                        requestMethod = new HttpMethod( argValue.ToString() );
-                        continue;
-                    }
-                    // flatten lists
-                    else if ( argValue is IEnumerable && !( argValue is string ) )
-                    {
-                        int index = 0;
-                        IEnumerable enumerable = argValue as IEnumerable;
-
-                        foreach ( object value in enumerable )
-                        {
-                            apiArgs.Add( String.Format( "{0}[{1}]", argName, index++ ), value.ToString() );
-                        }
-
-                        continue;
-                    }
-
-
-                    apiArgs.Add( argName, argValue.ToString() );
-                }
-
-                Match match = funcNameRegex.Match( binder.Name );
-
-                if ( !match.Success )
-                {
-                    throw new InvalidOperationException(
-                        "The called API function was invalid. It must be in the form of 'FunctionName###' where the optional ### represent the function version."
-                    );
-                }
-
-                string functionName = match.Groups[ "name" ].Value;
-
-                int version = 1; // assume version 1 unless specified
-                string versionString = match.Groups[ "version" ].Value;
-
-                if ( !string.IsNullOrEmpty( versionString ) )
-                {
-                    // the regex matches digits, but we should check for absurdly large numbers
-                    if ( !int.TryParse( versionString, out version ) )
-                    {
-                        throw new ArgumentOutOfRangeException( "version", "The function version number supplied was invalid or out of range." );
-                    }
-                }
-
-                result = CallAsync( requestMethod, functionName, version, apiArgs );
-
-                return true;
-            }
+//            public override bool TryInvokeMember( InvokeMemberBinder binder, object[] args, out object result )
+//            {
+//                if ( binder.CallInfo.ArgumentNames.Count != args.Length )
+//                {
+//                    throw new InvalidOperationException( "Argument mismatch in API call. All parameters must be passed as named arguments." );
+//                }
+//
+//                var apiArgs = new Dictionary<string, string>();
+//
+//                var requestMethod = HttpMethod.Get;
+//
+//                // convert named arguments into key value pairs
+//                for ( int x = 0 ; x < args.Length ; x++ )
+//                {
+//                    string argName = binder.CallInfo.ArgumentNames[ x ];
+//                    object argValue = args[ x ];
+//
+//                    // method is a reserved param for selecting the http request method
+//                    if ( argName.Equals( "method", StringComparison.OrdinalIgnoreCase ) )
+//                    {
+//                        requestMethod = new HttpMethod( argValue.ToString() );
+//                        continue;
+//                    }
+//                    // flatten lists
+//                    else if ( argValue is IEnumerable && !( argValue is string ) )
+//                    {
+//                        int index = 0;
+//                        IEnumerable enumerable = argValue as IEnumerable;
+//
+//                        foreach ( object value in enumerable )
+//                        {
+//                            apiArgs.Add( String.Format( "{0}[{1}]", argName, index++ ), value.ToString() );
+//                        }
+//
+//                        continue;
+//                    }
+//
+//
+//                    apiArgs.Add( argName, argValue.ToString() );
+//                }
+//
+//                Match match = funcNameRegex.Match( binder.Name );
+//
+//                if ( !match.Success )
+//                {
+//                    throw new InvalidOperationException(
+//                        "The called API function was invalid. It must be in the form of 'FunctionName###' where the optional ### represent the function version."
+//                    );
+//                }
+//
+//                string functionName = match.Groups[ "name" ].Value;
+//
+//                int version = 1; // assume version 1 unless specified
+//                string versionString = match.Groups[ "version" ].Value;
+//
+//                if ( !string.IsNullOrEmpty( versionString ) )
+//                {
+//                    // the regex matches digits, but we should check for absurdly large numbers
+//                    if ( !int.TryParse( versionString, out version ) )
+//                    {
+//                        throw new ArgumentOutOfRangeException( "version", "The function version number supplied was invalid or out of range." );
+//                    }
+//                }
+//
+//                result = CallAsync( requestMethod, functionName, version, apiArgs );
+//
+//                return true;
+//            }
         }
 
         /// <summary>

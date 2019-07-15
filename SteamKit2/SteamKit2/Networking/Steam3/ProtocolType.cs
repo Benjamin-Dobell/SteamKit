@@ -39,7 +39,9 @@ namespace SteamKit2
     static class ProtocolTypesExtensions
     {
         public static bool HasFlagsFast(this ProtocolTypes self, ProtocolTypes flags)
-            => (self & flags) > 0;
+        {
+            return (self & flags) > 0;
+        }
 
         internal static IEnumerable<ProtocolTypes> GetFlags(this ProtocolTypes self)
         {

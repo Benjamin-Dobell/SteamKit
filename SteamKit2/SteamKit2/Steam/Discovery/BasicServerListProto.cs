@@ -14,8 +14,8 @@ namespace SteamKit2.Discovery
         [ProtoMember(3)]
         public ProtocolTypes Protocols
         {
-            get => protocolTypes ?? (ProtocolTypes.Tcp | ProtocolTypes.Udp);
-            set => protocolTypes = value;
+            get { return protocolTypes ?? (ProtocolTypes.Tcp | ProtocolTypes.Udp); }
+            set { protocolTypes = value; }
         }
 
         ProtocolTypes? protocolTypes;

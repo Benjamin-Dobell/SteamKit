@@ -9,7 +9,12 @@ namespace SteamKit2
     {
         public EnvelopeEncryptedConnection( IConnection inner, EUniverse universe )
         {
-            this.inner = inner ?? throw new ArgumentNullException( nameof(inner) );
+            if (inner == null)
+            {
+                throw new ArgumentNullException(nameof(inner));
+            }
+
+            this.inner = inner;
             this.universe = universe;
 
             inner.NetMsgReceived += OnNetMsgReceived;
@@ -22,9 +27,15 @@ namespace SteamKit2
         EncryptionState state;
         INetFilterEncryption encryption;
 
-        public EndPoint CurrentEndPoint => inner.CurrentEndPoint;
+        public EndPoint CurrentEndPoint
+        {
+            get { return inner.CurrentEndPoint; }
+        }
 
-        public ProtocolTypes ProtocolTypes => inner.ProtocolTypes;
+        public ProtocolTypes ProtocolTypes
+        {
+            get { return inner.ProtocolTypes; }
+        }
 
         public event EventHandler<NetMsgEventArgs> NetMsgReceived;
 
@@ -33,14 +44,19 @@ namespace SteamKit2
         public event EventHandler<DisconnectedEventArgs> Disconnected;
 
         public void Connect( EndPoint endPoint, int timeout = 5000 )
-            => inner.Connect( endPoint, timeout );
+        {
+            inner.Connect(endPoint, timeout);
+        }
 
         public void Disconnect( bool userInitiated )
         {
             inner.Disconnect( userInitiated );
         }
 
-        public IPAddress GetLocalIP() => inner.GetLocalIP();
+        public IPAddress GetLocalIP()
+        {
+            return inner.GetLocalIP();
+        }
 
         public void Send( byte[] data )
         {

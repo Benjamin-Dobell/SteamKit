@@ -20,6 +20,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamLanguageParser", "..\R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{12C745D3-CA88-466A-86AD-62D54D9806E5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Protobuf", "..\protobuf\csharp\src\Google.Protobuf\Google.Protobuf.csproj", "{3792E0D6-E84A-4817-8961-EDE2783B36E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpClientPolyfill", "..\HttpClientPolyfill\HttpClientPolyfill\HttpClientPolyfill.csproj", "{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +62,30 @@ Global
 		{12C745D3-CA88-466A-86AD-62D54D9806E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{12C745D3-CA88-466A-86AD-62D54D9806E5}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{12C745D3-CA88-466A-86AD-62D54D9806E5}.Release|x86.ActiveCfg = Release|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Debug|x86.Build.0 = Debug|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Release|x86.ActiveCfg = Release|Any CPU
+		{3792E0D6-E84A-4817-8961-EDE2783B36E6}.Release|x86.Build.0 = Release|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Debug|x86.Build.0 = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Release|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Release|Mixed Platforms.Build.0 = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Release|x86.ActiveCfg = Debug|Any CPU
+		{AD8909AD-9CCE-4844-B784-2E953BEDEBE2}.Release|x86.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

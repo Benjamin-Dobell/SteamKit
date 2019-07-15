@@ -15,7 +15,10 @@ namespace SteamKit2
         public event EventHandler<DisconnectedEventArgs> Disconnected;
 
         public EndPoint CurrentEndPoint { get; set; }
-        public ProtocolTypes ProtocolTypes => ProtocolTypes.WebSocket;
+        public ProtocolTypes ProtocolTypes
+        {
+            get { return ProtocolTypes.WebSocket; }
+        }
 
         public void Connect(EndPoint endPoint, int timeout = 5000)
         {
@@ -33,21 +36,18 @@ namespace SteamKit2
         }
 
         public void Disconnect(bool userInitiated)
-            => DisconnectCore(userInitiated, specificContext: null);
+        {
+            DisconnectCore(userInitiated, specificContext: null);
+        }
 
-        public IPAddress GetLocalIP() => IPAddress.None;
+        public IPAddress GetLocalIP()
+        {
+            return IPAddress.None;
+        }
 
         public void Send(byte[] data)
         {
-            try
-            {
-                currentContext?.SendAsync(data).GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                DebugLog.WriteLine(nameof(WebSocketConnection), "Exception while sending data: {0} - {1}", ex.GetType().FullName, ex.Message);
-                DisconnectCore(userInitiated: false, specificContext: null);
-            }
+            currentContext?.Send(data);
         }
 
         void DisconnectCore(bool userInitiated, WebSocketContext specificContext)
