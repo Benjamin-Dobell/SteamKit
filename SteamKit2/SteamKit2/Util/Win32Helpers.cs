@@ -126,6 +126,12 @@ namespace SteamKit2.Util
 						// 3. Figure out where in the blob the serial number is
 						// and read it from there.
 						var serialNumberOffset = descriptor.SerialNumberOffset;
+
+						if (serialNumberOffset == 0)
+						{
+							return null;
+						}
+
 						var serialNumberPtr = new IntPtr( ( int ) descriptorPtr + ( int ) serialNumberOffset );
 
 						var serialNumber = Marshal.PtrToStringAnsi( serialNumberPtr );
