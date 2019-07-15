@@ -48,7 +48,7 @@ namespace SteamKit2
     {
         public override byte[] GetMachineGuid()
         {
-            return Encoding.UTF8.GetBytes( Environment.MachineName + "-SteamKit" );
+            return Encoding.UTF8.GetBytes( Environment.MachineName );
         }
 
         public override byte[] GetMacAddress()
@@ -72,12 +72,12 @@ namespace SteamKit2
                 // See: https://github.com/SteamRE/SteamKit/issues/629
             }
             // well...
-            return Encoding.UTF8.GetBytes( "SteamKit-MacAddress" );
+            return Encoding.UTF8.GetBytes( "MacAddress" );
         }
 
         public override byte[] GetDiskId()
         {
-            return Encoding.UTF8.GetBytes( "SteamKit-DiskId" );
+            return Encoding.UTF8.GetBytes( "DiskId" );
         }
     }
 
