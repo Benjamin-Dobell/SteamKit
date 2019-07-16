@@ -63,7 +63,7 @@ namespace SteamKit2
         /// <summary>
         /// This callback is fired in response to <see cref="SetLobbyData"/>.
         /// </summary>
-        public class SetLobbyDataCallback : CallbackMsg
+        public sealed class SetLobbyDataCallback : CallbackMsg
         {
             /// <summary>
             /// ID of app the targeted lobby belongs to.
@@ -92,7 +92,7 @@ namespace SteamKit2
         /// <summary>
         /// This callback is fired in response to <see cref="SetLobbyOwner"/>.
         /// </summary>
-        public class SetLobbyOwnerCallback : CallbackMsg
+        public sealed class SetLobbyOwnerCallback : CallbackMsg
         {
             /// <summary>
             /// ID of app the targeted lobby belongs to.
@@ -120,7 +120,7 @@ namespace SteamKit2
         /// <summary>
         /// This callback is fired whenever Steam sends us updated Lobby data.
         /// </summary>
-        public class LobbyDataCallback : CallbackMsg
+        public sealed class LobbyDataCallback : CallbackMsg
         {
             /// <summary>
             /// ID of app the updated lobby belongs to.
@@ -142,7 +142,7 @@ namespace SteamKit2
         /// <summary>
         /// This callback is fired whenever Steam informs us a user has joined a lobby.
         /// </summary>
-        public class UserJoinedLobbyCallback : CallbackMsg
+        public sealed class UserJoinedLobbyCallback : CallbackMsg
         {
             /// <summary>
             /// ID of app the lobby belongs to.
@@ -170,7 +170,7 @@ namespace SteamKit2
         /// <summary>
         /// This callback is fired whenever Steam informs us a user has left a lobby.
         /// </summary>
-        public class UserLeftLobbyCallback : CallbackMsg
+        public sealed class UserLeftLobbyCallback : CallbackMsg
         {
             /// <summary>
             /// ID of app the lobby belongs to.
