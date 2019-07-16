@@ -325,8 +325,6 @@ namespace SteamKit2
                             writer.Write( ( byte )0 );
                         }
 
-                        ;
-
                         writer.Write( footer );
                     }
 
