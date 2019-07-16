@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using SteamKit2.Internal;
 
 namespace SteamKit2
@@ -249,7 +250,7 @@ namespace SteamKit2
                 {
                     var lobbyId = new SteamID( lobby.steam_id );
                     var existingLobby = appLobbies.ContainsKey( lobbyId ) ? appLobbies[ lobbyId ] : null;
-                    var members = existingLobby?.members;
+                    var members = existingLobby?.Members;
 
                     return new Lobby(
                         lobbyId,
@@ -259,7 +260,7 @@ namespace SteamKit2
                         Lobby.DecodeMetadata( lobby.metadata ),
                         lobby.max_members,
                         lobby.num_members,
-                        members?.Count == lobby.num_members - 1 ? members : null,
+                        members,
                         lobby.distance,
                         lobby.weight
                     );
@@ -311,6 +312,24 @@ namespace SteamKit2
             Client.PostCallback( new LobbyDataCallback( body.app_id, updatedLobby ) );
         }
 
+        void UpdateLobbyMembers( ConcurrentDictionary<SteamID, Lobby> appLobbies, Lobby lobby, IReadOnlyList<Lobby.Member> members )
+        {
+            var updatedLobby = new Lobby(
+                lobby.SteamID,
+                lobby.LobbyType,
+                lobby.LobbyFlags,
+                lobby.OwnerSteamID,
+                lobby.Metadata,
+                lobby.MaxMembers,
+                lobby.NumMembers,
+                members,
+                lobby.Distance,
+                lobby.Weight
+            );
+
+            appLobbies[ lobby.SteamID ] = updatedLobby;
+        }
+
         void HandleUserJoinedLobby( IPacketMsg packetMsg )
         {
             var userJoinedLobby = new ClientMsgProtobuf<CMsgClientMMSUserJoinedLobby>( packetMsg );
@@ -328,24 +347,26 @@ namespace SteamKit2
                 return;
             }
 
-            int memberIndex = lobby.members.FindIndex( m => m.SteamID == userId );
+            var existingMember = lobby.Members.FirstOrDefault( m => m.SteamID == userId );
 
-            if ( memberIndex >= 0 )
+            if ( existingMember != null )
             {
                 // Already in lobby
                 return;
             }
 
-            var member = new Lobby.Member( new SteamID( body.steam_id_user ), body.persona_name );
+            var joiningMember = new Lobby.Member( new SteamID( body.steam_id_user ), body.persona_name );
 
-            lobby = lobby.Clone(); // Cloning to avoid mutating the original Lobby, as it was previously returned in a callback (not thread-safe).
-            lobby.members.Add( member );
-            appLobbies[ lobbyId ] = lobby;
+            var updatedMembers = new List<Lobby.Member>( lobby.Members.Count + 1 );
+            updatedMembers.AddRange( lobby.Members );
+            updatedMembers.Add( joiningMember );
+
+            UpdateLobbyMembers( appLobbies, lobby, updatedMembers );
 
             Client.PostCallback( new UserJoinedLobbyCallback(
                 body.app_id,
                 new SteamID( body.steam_id_lobby ),
-                member
+                joiningMember
             ) );
         }
 
@@ -359,31 +380,21 @@ namespace SteamKit2
 
             var appLobbies = lobbies.GetOrAdd( body.app_id, k => new ConcurrentDictionary<SteamID, Lobby>() );
             var lobby = appLobbies.ContainsKey( lobbyId ) ? appLobbies[ lobbyId ] : null;
+            var leavingMember = lobby?.Members.FirstOrDefault( m => m.SteamID == userId );
 
-            if ( lobby == null )
+            if ( leavingMember == null )
             {
-                // Unknown lobby
+                // Not in a known lobby
                 return;
             }
 
-            var memberIndex = lobby.members.FindIndex( m => m.SteamID == userId );
-
-            if ( memberIndex < 0 )
-            {
-                // Not in lobby
-                return;
-            }
-
-            var member = lobby.members[ memberIndex ];
-
-            lobby = lobby.Clone(); // Cloning to avoid mutating the original Lobby, as it was previously returned in a callback (not thread-safe).
-            lobby.members.RemoveAt( memberIndex );
-            appLobbies[ lobbyId ] = lobby;
+            var updatedMembers = lobby.Members.Where( m => !m.Equals( leavingMember ) ).ToList();
+            UpdateLobbyMembers( appLobbies, lobby, updatedMembers );
 
             Client.PostCallback( new UserLeftLobbyCallback(
                 body.app_id,
                 new SteamID( body.steam_id_lobby ),
-                member
+                leavingMember
             ) );
         }
 

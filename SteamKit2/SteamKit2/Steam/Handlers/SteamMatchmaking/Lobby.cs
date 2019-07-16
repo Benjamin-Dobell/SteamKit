@@ -233,7 +233,7 @@ namespace SteamKit2
             /// <summary>
             /// The metadata of the lobby; string key-value pairs.
             /// </summary>
-            public IReadOnlyDictionary<string, string> Metadata => metadata;
+            public IReadOnlyDictionary<string, string> Metadata { get; }
 
             /// <summary>
             /// The maximum number of members that can occupy the lobby.
@@ -241,14 +241,18 @@ namespace SteamKit2
             public int MaxMembers { get; }
 
             /// <summary>
-            /// The number of member that are currently occupying the lobby.
+            /// The number of members that are currently occupying the lobby.
             /// </summary>
             public int NumMembers { get; }
 
             /// <summary>
-            /// A list of lobby members, this does not include the lobby owner.
+            /// A list of lobby members, this does not include the lobby owner. Please keep in mind that Steam
+            /// does not provide member details for lobbies returned in a lobby list. As such, lobbies that
+            /// have been obtained/updated as a result of calling <see cref="SteamMatchmaking.GetLobbyList"/>
+            /// may have an empty (or stale) member list, whose count does not correlate with the value of
+            /// <see cref="NumMembers"/>.
             /// </summary>
-            public IReadOnlyList<Member> Members => members;
+            public IReadOnlyList<Member> Members { get; }
 
             /// <summary>
             /// The distance of the lobby.
@@ -260,48 +264,19 @@ namespace SteamKit2
             /// </summary>
             public long? Weight { get; }
 
-            internal List<Member> members;
-            internal Dictionary<string, string> metadata;
-
-            internal Lobby( SteamID steamId, ELobbyType lobbyType, int lobbyFlags, SteamID ownerSteamId, Dictionary<string, string> metadata, int maxMembers,
-                int numMembers, List<Member> members, float? distance, long? weight )
+            internal Lobby( SteamID steamId, ELobbyType lobbyType, int lobbyFlags, SteamID ownerSteamId, IReadOnlyDictionary<string, string> metadata, int maxMembers,
+                int numMembers, IReadOnlyList<Member> members, float? distance, long? weight )
             {
-                if ( members != null && members.Count != numMembers - 1 )
-                {
-                    throw new ArgumentException( "when members is non-null, members.Count must be equal to numMembers - 1" );
-                }
-
                 SteamID = steamId;
                 LobbyType = lobbyType;
                 LobbyFlags = lobbyFlags;
                 OwnerSteamID = ownerSteamId;
-                metadata = metadata ?? new Dictionary<string, string>();
+                Metadata = metadata ?? new Dictionary<string, string>();
                 MaxMembers = maxMembers;
                 NumMembers = numMembers;
-                members = members ?? new List<Member>();
+                Members = members ?? new List<Member>();
                 Distance = distance;
                 Weight = weight;
-            }
-
-            /// <summary>
-            /// Return a new <see cref="Lobby"/> instance with equivalent data as this lobby, but is safe to
-            /// access on another thread.
-            /// </summary>
-            /// <returns>A new <see cref="Lobby"/> instance that is equivalent to this one.</returns>
-            public Lobby Clone()
-            {
-                return new Lobby(
-                    SteamID,
-                    LobbyType,
-                    LobbyFlags,
-                    OwnerSteamID,
-                    new Dictionary<string, string>( metadata ),
-                    MaxMembers,
-                    NumMembers,
-                    new List<Member>( members ), // We're not doing a deep copy as Member is never mutated.
-                    Distance,
-                    Weight
-                );
             }
 
             internal static byte[] EncodeMetadata( Dictionary<string, string> metadata )
