@@ -66,7 +66,7 @@ namespace SteamKit2
         public sealed class SetLobbyDataCallback : CallbackMsg
         {
             /// <summary>
-            /// ID of app the targeted lobby belongs to.
+            /// ID of the app the targeted lobby belongs to.
             /// </summary>
             public uint AppID { get; }
 
@@ -88,14 +88,13 @@ namespace SteamKit2
             }
         }
 
-
         /// <summary>
         /// This callback is fired in response to <see cref="SetLobbyOwner"/>.
         /// </summary>
         public sealed class SetLobbyOwnerCallback : CallbackMsg
         {
             /// <summary>
-            /// ID of app the targeted lobby belongs to.
+            /// ID of the app the targeted lobby belongs to.
             /// </summary>
             public uint AppID { get; }
 
@@ -118,12 +117,69 @@ namespace SteamKit2
         }
 
         /// <summary>
+        /// This callback is fired in response to <see cref="JoinLobby"/>.
+        /// </summary>
+        public sealed class JoinLobbyCallback : CallbackMsg
+        {
+            /// <summary>
+            /// ID of the app the targeted lobby belongs to.
+            /// </summary>
+            public uint AppID { get; }
+
+            /// <summary>
+            /// The result of the request.
+            /// </summary>
+            public EChatRoomEnterResponse ChatRoomEnterResponse { get; }
+
+            /// <summary>
+            /// The joined <see cref="Lobby"/>, when <see cref="ChatRoomEnterResponse"/> equals
+            /// <see cref="EChatRoomEnterResponse.Success"/>, otherwise <c>null</c>
+            /// </summary>
+            public Lobby Lobby { get; }
+
+            internal JoinLobbyCallback( uint appId, EChatRoomEnterResponse res, Lobby lobby )
+            {
+                AppID = appId;
+                ChatRoomEnterResponse = res;
+                Lobby = lobby;
+            }
+        }
+
+        /// <summary>
+        /// This callback is fired in response to <see cref="LeaveLobby"/>.
+        /// </summary>
+        public sealed class LeaveLobbyCallback : CallbackMsg
+        {
+            /// <summary>
+            /// ID of the app the targeted lobby belongs to.
+            /// </summary>
+            public uint AppID { get; }
+
+            /// <summary>
+            /// The result of the request.
+            /// </summary>
+            public EResult Result { get; }
+
+            /// <summary>
+            /// The SteamID of the targeted Lobby.
+            /// </summary>
+            public SteamID LobbySteamId { get; }
+
+            internal LeaveLobbyCallback( uint appId, EResult res, SteamID lobbySteamId )
+            {
+                AppID = appId;
+                Result = res;
+                LobbySteamId = lobbySteamId;
+            }
+        }
+
+        /// <summary>
         /// This callback is fired whenever Steam sends us updated Lobby data.
         /// </summary>
         public sealed class LobbyDataCallback : CallbackMsg
         {
             /// <summary>
-            /// ID of app the updated lobby belongs to.
+            /// ID of the app the updated lobby belongs to.
             /// </summary>
             public uint AppID { get; }
 
@@ -145,7 +201,7 @@ namespace SteamKit2
         public sealed class UserJoinedLobbyCallback : CallbackMsg
         {
             /// <summary>
-            /// ID of app the lobby belongs to.
+            /// ID of the app the lobby belongs to.
             /// </summary>
             public uint AppID { get; }
 
@@ -173,7 +229,7 @@ namespace SteamKit2
         public sealed class UserLeftLobbyCallback : CallbackMsg
         {
             /// <summary>
-            /// ID of app the lobby belongs to.
+            /// ID of the app the lobby belongs to.
             /// </summary>
             public uint AppID { get; }
 

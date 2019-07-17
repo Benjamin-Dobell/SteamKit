@@ -192,9 +192,9 @@ namespace SteamKit2
                 /// <returns>true, if obj is <see cref="Member"/> with a matching SteamID. Otherwise, false.</returns>
                 public override bool Equals( object obj )
                 {
-                    if ( obj is Member )
+                    if ( obj is Member member )
                     {
-                        return SteamID.Equals( ( ( Member )obj ).SteamID );
+                        return SteamID.Equals( member.SteamID );
                     }
 
                     return false;
@@ -264,7 +264,8 @@ namespace SteamKit2
             /// </summary>
             public long? Weight { get; }
 
-            internal Lobby( SteamID steamId, ELobbyType lobbyType, int lobbyFlags, SteamID ownerSteamId, IReadOnlyDictionary<string, string> metadata, int maxMembers,
+            internal Lobby( SteamID steamId, ELobbyType lobbyType, int lobbyFlags, SteamID ownerSteamId, IReadOnlyDictionary<string, string> metadata,
+                int maxMembers,
                 int numMembers, IReadOnlyList<Member> members, float? distance, long? weight )
             {
                 SteamID = steamId;
@@ -279,6 +280,7 @@ namespace SteamKit2
                 Weight = weight;
             }
 
+            // TODO: Replace with KeyValue?
             internal static byte[] EncodeMetadata( Dictionary<string, string> metadata )
             {
                 using ( var ms = new MemoryStream() )
@@ -307,6 +309,8 @@ namespace SteamKit2
                 }
             }
 
+
+            // TODO: Replace with KeyValue?
             internal static Dictionary<string, string> DecodeMetadata( byte[] data )
             {
                 Dictionary<string, string> metadata = new Dictionary<string, string>();

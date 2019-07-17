@@ -7,15 +7,13 @@ using SteamKit2.Internal;
 namespace SteamKit2
 {
     /// <summary>
-    /// This handler is used for finding and creating.
-    /// TODO: Join, invite and leave lobbies.
+    /// This handler is used for creating, joining and obtaining lobby information.
     /// </summary>
     public partial class SteamMatchmaking : ClientMsgHandler
     {
         readonly Dictionary<EMsg, Action<IPacketMsg>> dispatchMap;
 
-        readonly ConcurrentDictionary<uint, ConcurrentDictionary<SteamID, Lobby>> lobbies =
-            new ConcurrentDictionary<uint, ConcurrentDictionary<SteamID, Lobby>>();
+        readonly LobbyCache lobbyCache = new LobbyCache();
 
         internal SteamMatchmaking()
         {
@@ -26,6 +24,8 @@ namespace SteamKit2
                 { EMsg.ClientMMSSetLobbyOwnerResponse, HandleSetLobbyOwnerResponse },
                 { EMsg.ClientMMSLobbyData, HandleLobbyData },
                 { EMsg.ClientMMSGetLobbyListResponse, HandleLobbyListResponse },
+                { EMsg.ClientMMSJoinLobbyResponse, HandleJoinLobbyResponse },
+                { EMsg.ClientMMSLeaveLobbyResponse, HandleLeaveLobbyResponse },
                 { EMsg.ClientMMSUserJoinedLobby, HandleUserJoinedLobby },
                 { EMsg.ClientMMSUserLeftLobby, HandleUserLeftLobby },
             };
@@ -37,7 +37,7 @@ namespace SteamKit2
         /// <param name="appId">ID of the app the lobby will belong to.</param>
         /// <param name="type">The type of lobby.</param>
         /// <param name="maxMembers">The maximum number of members that may occupy the lobby.</param>
-        /// <returns>false, if the request could not be submitted i.e. you're not yet logged in. Otherwise, true.</returns>
+        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
         public bool CreateLobby( uint appId, ELobbyType type, int maxMembers )
         {
             if ( Client.CellID == null )
@@ -57,7 +57,7 @@ namespace SteamKit2
                     lobby_flags = 0,
                     cell_id = Client.CellID.Value,
                     public_ip = NetHelpers.GetIPAddress( Client.PublicIP ),
-                    persona_name_owner = personaName,
+                    persona_name_owner = personaName
                 }
             };
 
@@ -68,23 +68,24 @@ namespace SteamKit2
         /// <summary>
         /// Sends a request to update a lobby.
         /// </summary>
-        /// <param name="appId">ID of app the lobby belong to.</param>
-        /// <param name="lobbyId">The SteamID of the lobby that should be updated.</param>
+        /// <param name="appId">ID of app the lobby belongs to.</param>
+        /// <param name="lobbySteamId">The SteamID of the lobby that should be updated.</param>
         /// <param name="lobbyType">The new lobby type.</param>
+        /// <param name="lobbyFlags">The new lobby flags.</param>
         /// <param name="maxMembers">The new maximum number of members that may occupy the lobby.</param>
         /// <param name="metadata">The new metadata for the lobby.</param>
-        public void SetLobbyData( uint appId, SteamID lobbyId, ELobbyType lobbyType, int maxMembers, Dictionary<string, string> metadata )
+        public void SetLobbyData( uint appId, SteamID lobbySteamId, ELobbyType lobbyType, int lobbyFlags, int maxMembers, Dictionary<string, string> metadata )
         {
             var setLobbyData = new ClientMsgProtobuf<CMsgClientMMSSetLobbyData>( EMsg.ClientMMSSetLobbyData )
             {
                 Body =
                 {
                     app_id = appId,
-                    steam_id_lobby = lobbyId.ConvertToUInt64(),
+                    steam_id_lobby = lobbySteamId,
                     steam_id_member = 0,
                     max_members = maxMembers,
                     lobby_type = ( int )lobbyType,
-                    lobby_flags = 0, // TODO: Lobby flags?
+                    lobby_flags = lobbyFlags,
                     metadata = Lobby.EncodeMetadata( metadata )
                 }
             };
@@ -93,20 +94,49 @@ namespace SteamKit2
         }
 
         /// <summary>
+        /// Sends a request to update the current user's lobby metadata.
+        /// </summary>
+        /// <param name="appId">ID of app the lobby belongs to.</param>
+        /// <param name="lobbySteamId">The SteamID of the lobby that should be updated.</param>
+        /// <param name="metadata">The new metadata for the lobby.</param>
+        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
+        public bool SetLobbyMemberData( uint appId, SteamID lobbySteamId, Dictionary<string, string> metadata )
+        {
+            if ( Client.SteamID == null )
+            {
+                return false;
+            }
+
+            var setLobbyData = new ClientMsgProtobuf<CMsgClientMMSSetLobbyData>( EMsg.ClientMMSSetLobbyData )
+            {
+                Body =
+                {
+                    app_id = appId,
+                    steam_id_lobby = lobbySteamId,
+                    steam_id_member = Client.SteamID,
+                    metadata = Lobby.EncodeMetadata( metadata )
+                }
+            };
+
+            Send( setLobbyData, appId );
+            return true;
+        }
+
+        /// <summary>
         /// Sends a request to update the owner of a lobby.
         /// </summary>
-        /// <param name="appId">ID of app the lobby belong to.</param>
-        /// <param name="lobbyId">The SteamID of the lobby that should have its owner updated.</param>
+        /// <param name="appId">ID of app the lobby belongs to.</param>
+        /// <param name="lobbySteamId">The SteamID of the lobby that should have its owner updated.</param>
         /// <param name="newOwner">The SteamID of the new owner.</param>
-        public void SetLobbyOwner( uint appId, SteamID lobbyId, SteamID newOwner )
+        public void SetLobbyOwner( uint appId, SteamID lobbySteamId, SteamID newOwner )
         {
             var setLobbyOwner = new ClientMsgProtobuf<CMsgClientMMSSetLobbyOwner>( EMsg.ClientMMSSetLobbyOwner )
             {
                 Body =
                 {
                     app_id = appId,
-                    steam_id_lobby = lobbyId.ConvertToUInt64(),
-                    steam_id_new_owner = newOwner.ConvertToUInt64(),
+                    steam_id_lobby = lobbySteamId,
+                    steam_id_new_owner = newOwner
                 }
             };
 
@@ -119,7 +149,7 @@ namespace SteamKit2
         /// <param name="appId">The ID of app for which we're requesting a list of lobbies.</param>
         /// <param name="filters">An optional list of filters.</param>
         /// <param name="maxLobbies">An optional maximum number of lobbies that will be returned.</param>
-        /// <returns>false, if the request could not be submitted i.e. you're not yet logged in. Otherwise, true.</returns>
+        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
         public bool GetLobbyList( uint appId, List<Lobby.Filter> filters = null, int maxLobbies = -1 )
         {
             if ( Client.CellID == null )
@@ -152,18 +182,101 @@ namespace SteamKit2
         }
 
         /// <summary>
-        /// Obtains a <see cref="Lobby"/> by its SteamID, if we already have the data for the lobby locally.
+        /// Sends a request to join a lobby.
+        /// </summary>
+        /// <param name="appId">ID of app the lobby belongs to.</param>
+        /// <param name="lobbySteamId">The SteamID of the lobby that should be joined.</param>
+        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
+        public bool JoinLobby( uint appId, SteamID lobbySteamId )
+        {
+            var personaName = Client.GetHandler<SteamFriends>()?.GetPersonaName();
+
+            var joinLobby = new ClientMsgProtobuf<CMsgClientMMSJoinLobby>( EMsg.ClientMMSJoinLobby )
+            {
+                Body =
+                {
+                    app_id = appId,
+                    persona_name = personaName,
+                    steam_id_lobby = lobbySteamId
+                }
+            };
+
+            Send( joinLobby, appId );
+
+            return true;
+        }
+
+        /// <summary>
+        /// Sends a request to leave a lobby.
+        /// </summary>
+        /// <param name="appId">ID of app the lobby belongs to.</param>
+        /// <param name="lobbySteamId">The SteamID of the lobby that should be left.</param>
+        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
+        public void LeaveLobby( uint appId, SteamID lobbySteamId )
+        {
+            var leaveLobby = new ClientMsgProtobuf<CMsgClientMMSLeaveLobby>( EMsg.ClientMMSLeaveLobby )
+            {
+                Body =
+                {
+                    app_id = appId,
+                    steam_id_lobby = lobbySteamId
+                }
+            };
+
+            Send( leaveLobby, appId );
+        }
+
+        /// <summary>
+        /// Sends a request to obtain a lobby's data.
+        /// </summary>
+        /// <param name="appId">The ID of app which we're attempting to obtain lobby data for.</param>
+        /// <param name="lobbySteamId">The SteamID of the lobby whose data is being requested.</param>
+        public void GetLobbyData( uint appId, SteamID lobbySteamId )
+        {
+            var getLobbyData = new ClientMsgProtobuf<CMsgClientMMSGetLobbyData>( EMsg.ClientMMSGetLobbyData )
+            {
+                Body =
+                {
+                    app_id = appId,
+                    steam_id_lobby = lobbySteamId
+                }
+            };
+
+            Send( getLobbyData, appId );
+        }
+
+        /// <summary>
+        /// Sends a lobby invite request.
+        /// NOTE: Steam provides no functionality to determine if the user was successfully invited.
+        /// </summary>
+        /// <param name="appId">The ID of app which owns the lobby we're inviting a user to.</param>
+        /// <param name="lobbySteamId">The SteamID of the lobby we're inviting a user to.</param>
+        /// <param name="userSteamId">The SteamID of the user we're inviting.</param>
+        public void InviteToLobby( uint appId, SteamID lobbySteamId, SteamID userSteamId )
+        {
+            var getLobbyData = new ClientMsgProtobuf<CMsgClientMMSInviteToLobby>( EMsg.ClientMMSInviteToLobby )
+            {
+                Body =
+                {
+                    app_id = appId,
+                    steam_id_lobby = lobbySteamId,
+                    steam_id_user_invited = userSteamId
+                }
+            };
+
+            Send( getLobbyData, appId );
+        }
+
+        /// <summary>
+        /// Obtains a <see cref="Lobby"/>, by its SteamID, if the data is cached locally.
         /// This method does not send a network request.
         /// </summary>
         /// <param name="appId">The ID of app which we're attempting to obtain a lobby for.</param>
-        /// <param name="lobbyId">The SteamID of the lobby that we wish to obtain.</param>
-        /// <returns>The <see cref="Lobby"/> corresponding with the specified app and lobby ID, if we have its data locally. Otherwise, null.</returns>
-        public Lobby GetLobby( uint appId, SteamID lobbyId )
+        /// <param name="lobbySteamId">The SteamID of the lobby that should be returned.</param>
+        /// <returns>The <see cref="Lobby"/> corresponding with the specified app and lobby ID, if cached. Otherwise, <c>null</c>.</returns>
+        public Lobby GetLobby( uint appId, SteamID lobbySteamId )
         {
-            Lobby lobby;
-            var appLobbies = lobbies.GetOrAdd( appId, k => new ConcurrentDictionary<SteamID, Lobby>() );
-            appLobbies.TryGetValue( lobbyId, out lobby );
-            return lobby;
+            return lobbyCache.GetLobby( appId, lobbySteamId );
         }
 
         /// <summary>
@@ -193,9 +306,7 @@ namespace SteamKit2
                 throw new ArgumentNullException( nameof(packetMsg) );
             }
 
-            Action<IPacketMsg> handler;
-
-            if ( dispatchMap.TryGetValue( packetMsg.MsgType, out handler ) )
+            if ( dispatchMap.TryGetValue( packetMsg.MsgType, out var handler ) )
             {
                 handler( packetMsg );
             }
@@ -206,54 +317,52 @@ namespace SteamKit2
         void HandleCreateLobbyResponse( IPacketMsg packetMsg )
         {
             var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSCreateLobbyResponse>( packetMsg );
-            CMsgClientMMSCreateLobbyResponse body = lobbyListResponse.Body;
+            var body = lobbyListResponse.Body;
 
             Client.PostCallback( new CreateLobbyCallback(
                 body.app_id,
                 ( EResult )body.eresult,
-                new SteamID( body.steam_id_lobby )
+                body.steam_id_lobby
             ) );
         }
 
         void HandleSetLobbyDataResponse( IPacketMsg packetMsg )
         {
             var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSSetLobbyDataResponse>( packetMsg );
-            CMsgClientMMSSetLobbyDataResponse body = lobbyListResponse.Body;
+            var body = lobbyListResponse.Body;
 
             Client.PostCallback( new SetLobbyDataCallback(
                 body.app_id,
                 ( EResult )body.eresult,
-                new SteamID( body.steam_id_lobby )
+                body.steam_id_lobby
             ) );
         }
 
         void HandleSetLobbyOwnerResponse( IPacketMsg packetMsg )
         {
             var setLobbyOwnerResponse = new ClientMsgProtobuf<CMsgClientMMSSetLobbyOwnerResponse>( packetMsg );
-            CMsgClientMMSSetLobbyOwnerResponse body = setLobbyOwnerResponse.Body;
+            var body = setLobbyOwnerResponse.Body;
 
             Client.PostCallback( new SetLobbyOwnerCallback(
                 body.app_id,
                 ( EResult )body.eresult,
-                new SteamID( body.steam_id_lobby )
+                body.steam_id_lobby
             ) );
         }
 
         void HandleLobbyListResponse( IPacketMsg packetMsg )
         {
             var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSGetLobbyListResponse>( packetMsg );
-            CMsgClientMMSGetLobbyListResponse body = lobbyListResponse.Body;
+            var body = lobbyListResponse.Body;
 
-            var appLobbies = lobbies.GetOrAdd( body.app_id, k => new ConcurrentDictionary<SteamID, Lobby>() );
             List<Lobby> lobbyList =
                 body.lobbies.ConvertAll( lobby =>
                 {
-                    var lobbyId = new SteamID( lobby.steam_id );
-                    var existingLobby = appLobbies.ContainsKey( lobbyId ) ? appLobbies[ lobbyId ] : null;
+                    var existingLobby = lobbyCache.GetLobby( body.app_id, lobby.steam_id );
                     var members = existingLobby?.Members;
 
                     return new Lobby(
-                        lobbyId,
+                        lobby.steam_id,
                         ( ELobbyType )lobby.lobby_type,
                         lobby.lobby_flags,
                         existingLobby?.OwnerSteamID,
@@ -268,7 +377,7 @@ namespace SteamKit2
 
             foreach ( var lobby in lobbyList )
             {
-                appLobbies[ lobby.SteamID ] = lobby;
+                lobbyCache.CacheLobby( body.app_id, lobby );
             }
 
             Client.PostCallback( new LobbyListCallback(
@@ -278,122 +387,118 @@ namespace SteamKit2
             ) );
         }
 
+        void HandleJoinLobbyResponse( IPacketMsg packetMsg )
+        {
+            var joinLobbyResponse = new ClientMsgProtobuf<CMsgClientMMSJoinLobbyResponse>( packetMsg );
+            var body = joinLobbyResponse.Body;
+
+            Lobby joinedLobby = null;
+
+            if ( body.steam_id_lobbySpecified )
+            {
+                var members =
+                    body.members.ConvertAll( member => new Lobby.Member(
+                        member.steam_id,
+                        member.persona_name,
+                        Lobby.DecodeMetadata( member.metadata )
+                    ) );
+
+                var cachedLobby = lobbyCache.GetLobby( body.app_id, body.steam_id_lobby );
+
+                joinedLobby = new Lobby(
+                    body.steam_id_lobby,
+                    ( ELobbyType )body.lobby_type,
+                    body.lobby_flags,
+                    body.steam_id_lobby,
+                    Lobby.DecodeMetadata( body.metadata ),
+                    body.max_members,
+                    members.Count,
+                    members,
+                    cachedLobby?.Distance,
+                    cachedLobby?.Weight
+                );
+
+                lobbyCache.CacheLobby( body.app_id, joinedLobby );
+            }
+
+            Client.PostCallback( new JoinLobbyCallback(
+                body.app_id,
+                ( EChatRoomEnterResponse )body.chat_room_enter_response,
+                joinedLobby
+            ) );
+        }
+
+        void HandleLeaveLobbyResponse( IPacketMsg packetMsg )
+        {
+            var leaveLobbyResponse = new ClientMsgProtobuf<CMsgClientMMSLeaveLobbyResponse>( packetMsg );
+            var body = leaveLobbyResponse.Body;
+
+            if ( body.eresult == ( int )EResult.OK )
+            {
+                lobbyCache.RemoveLobbyMember( body.app_id, body.steam_id_lobby, Client.SteamID );
+            }
+
+            Client.PostCallback( new LeaveLobbyCallback(
+                body.app_id,
+                ( EResult )body.eresult,
+                body.steam_id_lobby
+            ) );
+        }
+
         void HandleLobbyData( IPacketMsg packetMsg )
         {
             var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSLobbyData>( packetMsg );
-            CMsgClientMMSLobbyData body = lobbyListResponse.Body;
+            var body = lobbyListResponse.Body;
 
-            var lobbyId = new SteamID( body.steam_id_lobby );
-            var appLobbies = lobbies.GetOrAdd( body.app_id, k => new ConcurrentDictionary<SteamID, Lobby>() );
-            var existingLobby = appLobbies.ContainsKey( lobbyId ) ? appLobbies[ lobbyId ] : null;
-
-            List<Lobby.Member> memberList =
-                body.members.ConvertAll( member => new Lobby.Member(
-                    new SteamID( member.steam_id ),
-                    member.persona_name,
-                    Lobby.DecodeMetadata( member.metadata )
-                ) );
-
+            var cachedLobby = lobbyCache.GetLobby( body.app_id, body.steam_id_lobby );
             var updatedLobby = new Lobby(
-                lobbyId,
+                body.steam_id_lobby,
                 ( ELobbyType )body.lobby_type,
                 body.lobby_flags,
-                new SteamID( body.steam_id_owner ),
+                body.steam_id_owner,
                 Lobby.DecodeMetadata( body.metadata ),
                 body.max_members,
                 body.num_members,
-                memberList,
-                existingLobby?.Distance,
-                existingLobby?.Weight
+                body.members.ConvertAll( member => new Lobby.Member(
+                    member.steam_id,
+                    member.persona_name,
+                    Lobby.DecodeMetadata( member.metadata )
+                ) ),
+                cachedLobby?.Distance,
+                cachedLobby?.Weight
             );
 
-            appLobbies[ lobbyId ] = updatedLobby;
+            lobbyCache.CacheLobby( body.app_id, updatedLobby );
 
             Client.PostCallback( new LobbyDataCallback( body.app_id, updatedLobby ) );
-        }
-
-        void UpdateLobbyMembers( ConcurrentDictionary<SteamID, Lobby> appLobbies, Lobby lobby, IReadOnlyList<Lobby.Member> members )
-        {
-            var updatedLobby = new Lobby(
-                lobby.SteamID,
-                lobby.LobbyType,
-                lobby.LobbyFlags,
-                lobby.OwnerSteamID,
-                lobby.Metadata,
-                lobby.MaxMembers,
-                lobby.NumMembers,
-                members,
-                lobby.Distance,
-                lobby.Weight
-            );
-
-            appLobbies[ lobby.SteamID ] = updatedLobby;
         }
 
         void HandleUserJoinedLobby( IPacketMsg packetMsg )
         {
             var userJoinedLobby = new ClientMsgProtobuf<CMsgClientMMSUserJoinedLobby>( packetMsg );
-            CMsgClientMMSUserJoinedLobby body = userJoinedLobby.Body;
+            var body = userJoinedLobby.Body;
+            var joiningMember = lobbyCache.AddLobbyMember( body.app_id, body.steam_id_lobby, body.steam_id_user, body.persona_name );
 
-            var lobbyId = new SteamID( body.steam_id_lobby );
-            var userId = new SteamID( body.steam_id_user );
-
-            var appLobbies = lobbies.GetOrAdd( body.app_id, k => new ConcurrentDictionary<SteamID, Lobby>() );
-            var lobby = appLobbies.ContainsKey( lobbyId ) ? appLobbies[ lobbyId ] : null;
-
-            if ( lobby == null )
+            if ( joiningMember != null )
             {
-                // Unknown lobby
-                return;
+                Client.PostCallback( new UserJoinedLobbyCallback(
+                    body.app_id,
+                    body.steam_id_lobby,
+                    joiningMember
+                ) );
             }
-
-            var existingMember = lobby.Members.FirstOrDefault( m => m.SteamID == userId );
-
-            if ( existingMember != null )
-            {
-                // Already in lobby
-                return;
-            }
-
-            var joiningMember = new Lobby.Member( new SteamID( body.steam_id_user ), body.persona_name );
-
-            var updatedMembers = new List<Lobby.Member>( lobby.Members.Count + 1 );
-            updatedMembers.AddRange( lobby.Members );
-            updatedMembers.Add( joiningMember );
-
-            UpdateLobbyMembers( appLobbies, lobby, updatedMembers );
-
-            Client.PostCallback( new UserJoinedLobbyCallback(
-                body.app_id,
-                new SteamID( body.steam_id_lobby ),
-                joiningMember
-            ) );
         }
 
         void HandleUserLeftLobby( IPacketMsg packetMsg )
         {
             var userLeftLobby = new ClientMsgProtobuf<CMsgClientMMSUserLeftLobby>( packetMsg );
-            CMsgClientMMSUserLeftLobby body = userLeftLobby.Body;
+            var body = userLeftLobby.Body;
 
-            var lobbyId = new SteamID( body.steam_id_lobby );
-            var userId = new SteamID( body.steam_id_user );
-
-            var appLobbies = lobbies.GetOrAdd( body.app_id, k => new ConcurrentDictionary<SteamID, Lobby>() );
-            var lobby = appLobbies.ContainsKey( lobbyId ) ? appLobbies[ lobbyId ] : null;
-            var leavingMember = lobby?.Members.FirstOrDefault( m => m.SteamID == userId );
-
-            if ( leavingMember == null )
-            {
-                // Not in a known lobby
-                return;
-            }
-
-            var updatedMembers = lobby.Members.Where( m => !m.Equals( leavingMember ) ).ToList();
-            UpdateLobbyMembers( appLobbies, lobby, updatedMembers );
+            var leavingMember = lobbyCache.RemoveLobbyMember( body.app_id, body.steam_id_lobby, body.steam_id_user );
 
             Client.PostCallback( new UserLeftLobbyCallback(
                 body.app_id,
-                new SteamID( body.steam_id_lobby ),
+                body.steam_id_lobby,
                 leavingMember
             ) );
         }
