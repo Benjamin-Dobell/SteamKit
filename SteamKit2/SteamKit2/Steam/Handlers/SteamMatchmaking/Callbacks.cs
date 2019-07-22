@@ -7,7 +7,7 @@ namespace SteamKit2
         /// <summary>
         /// This callback is fired in response to <see cref="GetLobbyList"/>.
         /// </summary>
-        public sealed class LobbyListCallback : CallbackMsg
+        public sealed class GetLobbyListCallback : CallbackMsg
         {
             /// <summary>
             /// ID of the app the lobbies belongs to.
@@ -24,7 +24,7 @@ namespace SteamKit2
             /// </summary>
             public List<Lobby> Lobbies { get; }
 
-            internal LobbyListCallback( uint appId, EResult res, List<Lobby> lobbies )
+            internal GetLobbyListCallback( uint appId, EResult res, List<Lobby> lobbies )
             {
                 AppID = appId;
                 Result = res;
@@ -106,13 +106,13 @@ namespace SteamKit2
             /// <summary>
             /// The SteamID of the targeted Lobby.
             /// </summary>
-            public SteamID LobbySteamId { get; }
+            public SteamID LobbySteamID { get; }
 
             internal SetLobbyOwnerCallback( uint appId, EResult res, SteamID lobbySteamId )
             {
                 AppID = appId;
                 Result = res;
-                LobbySteamId = lobbySteamId;
+                LobbySteamID = lobbySteamId;
             }
         }
 
@@ -163,18 +163,18 @@ namespace SteamKit2
             /// <summary>
             /// The SteamID of the targeted Lobby.
             /// </summary>
-            public SteamID LobbySteamId { get; }
+            public SteamID LobbySteamID { get; }
 
             internal LeaveLobbyCallback( uint appId, EResult res, SteamID lobbySteamId )
             {
                 AppID = appId;
                 Result = res;
-                LobbySteamId = lobbySteamId;
+                LobbySteamID = lobbySteamId;
             }
         }
 
         /// <summary>
-        /// This callback is fired whenever Steam sends us updated Lobby data.
+        /// This callback is fired in response to <see cref="GetLobbyData"/>, as well as whenever Steam sends us updated lobby data.
         /// </summary>
         public sealed class LobbyDataCallback : CallbackMsg
         {

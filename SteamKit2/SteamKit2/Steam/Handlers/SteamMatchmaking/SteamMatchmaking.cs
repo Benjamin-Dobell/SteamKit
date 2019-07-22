@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using SteamKit2.Internal;
 
 namespace SteamKit2
@@ -23,7 +21,7 @@ namespace SteamKit2
                 { EMsg.ClientMMSSetLobbyDataResponse, HandleSetLobbyDataResponse },
                 { EMsg.ClientMMSSetLobbyOwnerResponse, HandleSetLobbyOwnerResponse },
                 { EMsg.ClientMMSLobbyData, HandleLobbyData },
-                { EMsg.ClientMMSGetLobbyListResponse, HandleLobbyListResponse },
+                { EMsg.ClientMMSGetLobbyListResponse, HandleGetLobbyListResponse },
                 { EMsg.ClientMMSJoinLobbyResponse, HandleJoinLobbyResponse },
                 { EMsg.ClientMMSLeaveLobbyResponse, HandleLeaveLobbyResponse },
                 { EMsg.ClientMMSUserJoinedLobby, HandleUserJoinedLobby },
@@ -45,7 +43,7 @@ namespace SteamKit2
                 return false;
             }
 
-            string personaName = Client.GetHandler<SteamFriends>().GetPersonaName();
+            var personaName = Client.GetHandler<SteamFriends>().GetPersonaName();
 
             var createLobby = new ClientMsgProtobuf<CMsgClientMMSCreateLobby>( EMsg.ClientMMSCreateLobby )
             {
@@ -74,7 +72,8 @@ namespace SteamKit2
         /// <param name="lobbyFlags">The new lobby flags.</param>
         /// <param name="maxMembers">The new maximum number of members that may occupy the lobby.</param>
         /// <param name="metadata">The new metadata for the lobby.</param>
-        public void SetLobbyData( uint appId, SteamID lobbySteamId, ELobbyType lobbyType, int lobbyFlags, int maxMembers, Dictionary<string, string> metadata )
+        public void SetLobbyData( uint appId, SteamID lobbySteamId, ELobbyType lobbyType, int lobbyFlags, int maxMembers,
+            IReadOnlyDictionary<string, string> metadata )
         {
             var setLobbyData = new ClientMsgProtobuf<CMsgClientMMSSetLobbyData>( EMsg.ClientMMSSetLobbyData )
             {
@@ -100,7 +99,7 @@ namespace SteamKit2
         /// <param name="lobbySteamId">The SteamID of the lobby that should be updated.</param>
         /// <param name="metadata">The new metadata for the lobby.</param>
         /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
-        public bool SetLobbyMemberData( uint appId, SteamID lobbySteamId, Dictionary<string, string> metadata )
+        public bool SetLobbyMemberData( uint appId, SteamID lobbySteamId, IReadOnlyDictionary<string, string> metadata )
         {
             if ( Client.SteamID == null )
             {
@@ -350,12 +349,12 @@ namespace SteamKit2
             ) );
         }
 
-        void HandleLobbyListResponse( IPacketMsg packetMsg )
+        void HandleGetLobbyListResponse( IPacketMsg packetMsg )
         {
             var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSGetLobbyListResponse>( packetMsg );
             var body = lobbyListResponse.Body;
 
-            List<Lobby> lobbyList =
+            var lobbyList =
                 body.lobbies.ConvertAll( lobby =>
                 {
                     var existingLobby = lobbyCache.GetLobby( body.app_id, lobby.steam_id );
@@ -380,7 +379,7 @@ namespace SteamKit2
                 lobbyCache.CacheLobby( body.app_id, lobby );
             }
 
-            Client.PostCallback( new LobbyListCallback(
+            Client.PostCallback( new GetLobbyListCallback(
                 body.app_id,
                 ( EResult )body.eresult,
                 lobbyList

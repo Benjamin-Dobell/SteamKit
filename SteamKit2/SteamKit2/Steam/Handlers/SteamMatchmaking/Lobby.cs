@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using SteamKit2.Internal;
-using static System.Text.Encoding;
 
 namespace SteamKit2
 {
@@ -53,7 +52,7 @@ namespace SteamKit2
                 /// <returns>A protobuf serializable representation of this filter.</returns>
                 public virtual CMsgClientMMSGetLobbyList.Filter Serialize()
                 {
-                    CMsgClientMMSGetLobbyList.Filter filter = new CMsgClientMMSGetLobbyList.Filter();
+                    var filter = new CMsgClientMMSGetLobbyList.Filter();
                     filter.filter_type = ( int )FilterType;
                     filter.key = Key;
                     filter.comparision = ( int )Comparison;
@@ -86,7 +85,7 @@ namespace SteamKit2
                 /// <returns>A protobuf serializable representation of this filter.</returns>
                 public override CMsgClientMMSGetLobbyList.Filter Serialize()
                 {
-                    CMsgClientMMSGetLobbyList.Filter filter = base.Serialize();
+                    var filter = base.Serialize();
                     filter.value = ( ( int )Value ).ToString();
                     return filter;
                 }
@@ -119,7 +118,7 @@ namespace SteamKit2
                 /// <returns>A protobuf serializable representation of this filter.</returns>
                 public override CMsgClientMMSGetLobbyList.Filter Serialize()
                 {
-                    CMsgClientMMSGetLobbyList.Filter filter = base.Serialize();
+                    var filter = base.Serialize();
                     filter.value = Value.ToString();
                     return filter;
                 }
@@ -152,7 +151,7 @@ namespace SteamKit2
                 /// <returns>A protobuf serializable representation of this filter.</returns>
                 public override CMsgClientMMSGetLobbyList.Filter Serialize()
                 {
-                    CMsgClientMMSGetLobbyList.Filter filter = base.Serialize();
+                    var filter = base.Serialize();
                     filter.value = Value;
                     return filter;
                 }
@@ -226,7 +225,10 @@ namespace SteamKit2
             public int LobbyFlags { get; }
 
             /// <summary>
-            /// The SteamID of the lobby's owner.
+            /// The SteamID of the lobby's owner. Please keep in mind that Steam does not provide lobby
+            /// owner details for lobbies returned in a lobby list. As such, lobbies that have been
+            /// obtained/updated as a result of calling <see cref="SteamMatchmaking.GetLobbyList"/>
+            /// may have a null (or non-null but state) owner.
             /// </summary>
             public SteamID OwnerSteamID { get; }
 
@@ -250,7 +252,8 @@ namespace SteamKit2
             /// does not provide member details for lobbies returned in a lobby list. As such, lobbies that
             /// have been obtained/updated as a result of calling <see cref="SteamMatchmaking.GetLobbyList"/>
             /// may have an empty (or stale) member list, whose count does not correlate with the value of
-            /// <see cref="NumMembers"/>.
+            /// <see cref="NumMembers"/>. Additionally, lobby owners will not see themselves in the member
+            /// list until another user joins the lobby.
             /// </summary>
             public IReadOnlyList<Member> Members { get; }
 
