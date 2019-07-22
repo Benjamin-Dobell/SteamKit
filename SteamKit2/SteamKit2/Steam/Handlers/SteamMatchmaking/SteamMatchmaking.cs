@@ -409,7 +409,7 @@ namespace SteamKit2
                     body.steam_id_lobby,
                     ( ELobbyType )body.lobby_type,
                     body.lobby_flags,
-                    body.steam_id_lobby,
+                    body.steam_id_owner,
                     Lobby.DecodeMetadata( body.metadata ),
                     body.max_members,
                     members.Count,
