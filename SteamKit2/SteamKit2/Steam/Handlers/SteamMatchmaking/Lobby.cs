@@ -283,76 +283,45 @@ namespace SteamKit2
                 Weight = weight;
             }
 
-            // TODO: Replace with KeyValue?
-            internal static byte[] EncodeMetadata( Dictionary<string, string> metadata )
+            internal static byte[] EncodeMetadata( IReadOnlyDictionary<string, string> metadata )
             {
+                var keyValue = new KeyValue( "" );
+
+                foreach ( var entry in metadata )
+                {
+                    keyValue[ entry.Key ] = new KeyValue( null, entry.Value );
+                }
+
                 using ( var ms = new MemoryStream() )
                 {
-                    using ( var writer = new BinaryWriter( ms ) )
-                    {
-                        byte[] header = { 0, 0 };
-                        byte[] footer = { 8, 8 };
+                    keyValue.SaveToStream( ms, true );
 
-                        writer.Write( header );
-
-                        foreach ( var pair in metadata )
-                        {
-                            if ( pair.Value == null ) continue;
-                            writer.Write( ( byte )1 );
-                            writer.Write( UTF8.GetBytes( pair.Key ) );
-                            writer.Write( ( byte )0 );
-                            writer.Write( UTF8.GetBytes( pair.Value ) );
-                            writer.Write( ( byte )0 );
-                        }
-
-                        writer.Write( footer );
-                    }
-
-                    return ms.ToArray();
+                    var buffer = new byte[ ms.Length ];
+                    ms.Seek( 0, SeekOrigin.Begin );
+                    ms.Read( buffer, 0, buffer.Length );
+                    return buffer;
                 }
             }
 
-
-            // TODO: Replace with KeyValue?
-            internal static Dictionary<string, string> DecodeMetadata( byte[] data )
+            internal static Dictionary<string, string> DecodeMetadata( byte[] buffer )
             {
-                Dictionary<string, string> metadata = new Dictionary<string, string>();
+                var metadata = new Dictionary<string, string>();
 
-                bool parsingKey = true;
-                string key = null;
-
-                int dataEnd = data.Length - 3;
-
-                if ( dataEnd < 0 || data[ 0 ] != 0 || data[ 1 ] != 0 || data[ 2 ] != 1 || data[ dataEnd + 1 ] != 8 || data[ dataEnd + 1 ] != 8 )
+                if ( buffer.Length > 0 )
                 {
-                    throw new FormatException( "Lobby metadata is of an unexpected format" );
-                }
+                    var keyValue = new KeyValue();
 
-                int stringStartIndex = 3;
-
-                for ( int i = stringStartIndex; i <= dataEnd; i++ )
-                {
-                    if ( data[ i ] == 0 )
+                    using ( var ms = new MemoryStream( buffer ) )
                     {
-                        if ( parsingKey )
+                        if ( !keyValue.TryReadAsBinary( ms ) )
                         {
-                            key = UTF8.GetString( data, stringStartIndex, i - stringStartIndex );
-                            parsingKey = false;
+                            throw new FormatException( "Lobby metadata is of an unexpected format" );
                         }
-                        else
-                        {
-                            string value = UTF8.GetString( data, stringStartIndex, i - stringStartIndex );
-                            metadata.Add( key, value );
+                    }
 
-                            if ( ++i <= dataEnd && data[ i ] != 1 )
-                            {
-                                throw new FormatException( "Lobby metadata is of an unexpected format" );
-                            }
-
-                            parsingKey = true;
-                        }
-
-                        stringStartIndex = i + 1;
+                    foreach ( var value in keyValue.Children )
+                    {
+                        metadata[ value.Name ] = value.Value;
                     }
                 }
 
