@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using SteamKit2.Internal;
 
@@ -12,6 +13,8 @@ namespace SteamKit2
         readonly Dictionary<EMsg, Action<IPacketMsg>> dispatchMap;
 
         readonly LobbyCache lobbyCache = new LobbyCache();
+
+        readonly ConcurrentDictionary<JobID, CMsgClientMMSCreateLobby> createLobbyRequests = new ConcurrentDictionary<JobID, CMsgClientMMSCreateLobby>();
 
         internal SteamMatchmaking()
         {
@@ -33,14 +36,17 @@ namespace SteamKit2
         /// Sends a request to create a new lobby.
         /// </summary>
         /// <param name="appId">ID of the app the lobby will belong to.</param>
-        /// <param name="type">The type of lobby.</param>
-        /// <param name="maxMembers">The maximum number of members that may occupy the lobby.</param>
-        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
-        public bool CreateLobby( uint appId, ELobbyType type, int maxMembers )
+        /// <param name="lobbyType">The new lobby type.</param>
+        /// <param name="maxMembers">The new maximum number of members that may occupy the lobby.</param>
+        /// <param name="lobbyFlags">The new lobby flags. Defaults to 0.</param>
+        /// <param name="metadata">The new metadata for the lobby. Defaults to <c>null</c> (treated as an empty dictionary).</param>
+        /// <returns><c>null</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, an <see cref="AsyncJob{CreateLobbyCallback}"/>.</returns>
+        public AsyncJob<CreateLobbyCallback> CreateLobby( uint appId, ELobbyType lobbyType, int maxMembers, int lobbyFlags = 0,
+            IReadOnlyDictionary<string, string> metadata = null )
         {
             if ( Client.CellID == null )
             {
-                return false;
+                return null;
             }
 
             var personaName = Client.GetHandler<SteamFriends>().GetPersonaName();
@@ -50,17 +56,21 @@ namespace SteamKit2
                 Body =
                 {
                     app_id = appId,
+                    lobby_type = ( int )lobbyType,
                     max_members = maxMembers,
-                    lobby_type = ( int )type,
-                    lobby_flags = 0,
+                    lobby_flags = lobbyFlags,
+                    metadata = Lobby.EncodeMetadata( metadata ),
                     cell_id = Client.CellID.Value,
                     public_ip = NetHelpers.GetIPAddress( Client.PublicIP ),
                     persona_name_owner = personaName
-                }
+                },
+                SourceJobID = Client.GetNextJobID()
             };
 
             Send( createLobby, appId );
-            return true;
+
+            createLobbyRequests[ createLobby.SourceJobID ] = createLobby.Body;
+            return new AsyncJob<CreateLobbyCallback>( Client, createLobby.SourceJobID );
         }
 
         /// <summary>
@@ -69,11 +79,12 @@ namespace SteamKit2
         /// <param name="appId">ID of app the lobby belongs to.</param>
         /// <param name="lobbySteamId">The SteamID of the lobby that should be updated.</param>
         /// <param name="lobbyType">The new lobby type.</param>
-        /// <param name="lobbyFlags">The new lobby flags.</param>
         /// <param name="maxMembers">The new maximum number of members that may occupy the lobby.</param>
-        /// <param name="metadata">The new metadata for the lobby.</param>
-        public void SetLobbyData( uint appId, SteamID lobbySteamId, ELobbyType lobbyType, int lobbyFlags, int maxMembers,
-            IReadOnlyDictionary<string, string> metadata )
+        /// <param name="lobbyFlags">The new lobby flags. Defaults to 0.</param>
+        /// <param name="metadata">The new metadata for the lobby. Defaults to <c>null</c> (treated as an empty dictionary).</param>
+        /// <returns>An <see cref="AsyncJob{SetLobbyDataCallback}"/>.</returns>
+        public AsyncJob<SetLobbyDataCallback> SetLobbyData( uint appId, SteamID lobbySteamId, ELobbyType lobbyType, int maxMembers, int lobbyFlags = 0,
+            IReadOnlyDictionary<string, string> metadata = null )
         {
             var setLobbyData = new ClientMsgProtobuf<CMsgClientMMSSetLobbyData>( EMsg.ClientMMSSetLobbyData )
             {
@@ -82,14 +93,17 @@ namespace SteamKit2
                     app_id = appId,
                     steam_id_lobby = lobbySteamId,
                     steam_id_member = 0,
-                    max_members = maxMembers,
                     lobby_type = ( int )lobbyType,
+                    max_members = maxMembers,
                     lobby_flags = lobbyFlags,
-                    metadata = Lobby.EncodeMetadata( metadata )
-                }
+                    metadata = Lobby.EncodeMetadata( metadata ),
+                },
+                SourceJobID = Client.GetNextJobID()
             };
 
             Send( setLobbyData, appId );
+
+            return new AsyncJob<SetLobbyDataCallback>( Client, setLobbyData.SourceJobID );
         }
 
         /// <summary>
@@ -98,12 +112,12 @@ namespace SteamKit2
         /// <param name="appId">ID of app the lobby belongs to.</param>
         /// <param name="lobbySteamId">The SteamID of the lobby that should be updated.</param>
         /// <param name="metadata">The new metadata for the lobby.</param>
-        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
-        public bool SetLobbyMemberData( uint appId, SteamID lobbySteamId, IReadOnlyDictionary<string, string> metadata )
+        /// <returns><c>null</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, an <see cref="AsyncJob{SetLobbyDataCallback}"/>.</returns>
+        public AsyncJob<SetLobbyDataCallback> SetLobbyMemberData( uint appId, SteamID lobbySteamId, IReadOnlyDictionary<string, string> metadata )
         {
             if ( Client.SteamID == null )
             {
-                return false;
+                return null;
             }
 
             var setLobbyData = new ClientMsgProtobuf<CMsgClientMMSSetLobbyData>( EMsg.ClientMMSSetLobbyData )
@@ -118,7 +132,8 @@ namespace SteamKit2
             };
 
             Send( setLobbyData, appId );
-            return true;
+
+            return new AsyncJob<SetLobbyDataCallback>( Client, setLobbyData.SourceJobID );
         }
 
         /// <summary>
@@ -127,7 +142,8 @@ namespace SteamKit2
         /// <param name="appId">ID of app the lobby belongs to.</param>
         /// <param name="lobbySteamId">The SteamID of the lobby that should have its owner updated.</param>
         /// <param name="newOwner">The SteamID of the new owner.</param>
-        public void SetLobbyOwner( uint appId, SteamID lobbySteamId, SteamID newOwner )
+        /// <returns>An <see cref="AsyncJob{SetLobbyOwnerCallback}"/>.</returns>
+        public AsyncJob<SetLobbyOwnerCallback> SetLobbyOwner( uint appId, SteamID lobbySteamId, SteamID newOwner )
         {
             var setLobbyOwner = new ClientMsgProtobuf<CMsgClientMMSSetLobbyOwner>( EMsg.ClientMMSSetLobbyOwner )
             {
@@ -136,10 +152,13 @@ namespace SteamKit2
                     app_id = appId,
                     steam_id_lobby = lobbySteamId,
                     steam_id_new_owner = newOwner
-                }
+                },
+                SourceJobID = Client.GetNextJobID()
             };
 
             Send( setLobbyOwner, appId );
+
+            return new AsyncJob<SetLobbyOwnerCallback>( Client, setLobbyOwner.SourceJobID );
         }
 
         /// <summary>
@@ -148,12 +167,12 @@ namespace SteamKit2
         /// <param name="appId">The ID of app for which we're requesting a list of lobbies.</param>
         /// <param name="filters">An optional list of filters.</param>
         /// <param name="maxLobbies">An optional maximum number of lobbies that will be returned.</param>
-        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
-        public bool GetLobbyList( uint appId, List<Lobby.Filter> filters = null, int maxLobbies = -1 )
+        /// <returns><c>null</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, an <see cref="AsyncJob{GetLobbyListCallback}"/>.</returns>
+        public AsyncJob<GetLobbyListCallback> GetLobbyList( uint appId, List<Lobby.Filter> filters = null, int maxLobbies = -1 )
         {
             if ( Client.CellID == null )
             {
-                return false;
+                return null;
             }
 
             var getLobbies = new ClientMsgProtobuf<CMsgClientMMSGetLobbyList>( EMsg.ClientMMSGetLobbyList )
@@ -164,7 +183,8 @@ namespace SteamKit2
                     cell_id = Client.CellID.Value,
                     public_ip = NetHelpers.GetIPAddress( Client.PublicIP ),
                     num_lobbies_requested = maxLobbies
-                }
+                },
+                SourceJobID = Client.GetNextJobID()
             };
 
             if ( filters != null )
@@ -177,7 +197,7 @@ namespace SteamKit2
 
             Send( getLobbies, appId );
 
-            return true;
+            return new AsyncJob<GetLobbyListCallback>( Client, getLobbies.SourceJobID );
         }
 
         /// <summary>
@@ -185,10 +205,15 @@ namespace SteamKit2
         /// </summary>
         /// <param name="appId">ID of app the lobby belongs to.</param>
         /// <param name="lobbySteamId">The SteamID of the lobby that should be joined.</param>
-        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
-        public bool JoinLobby( uint appId, SteamID lobbySteamId )
+        /// <returns><c>null</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, an <see cref="AsyncJob{JoinLobbyCallback}"/>.</returns>
+        public AsyncJob<JoinLobbyCallback> JoinLobby( uint appId, SteamID lobbySteamId )
         {
             var personaName = Client.GetHandler<SteamFriends>()?.GetPersonaName();
+
+            if ( personaName == null )
+            {
+                return null;
+            }
 
             var joinLobby = new ClientMsgProtobuf<CMsgClientMMSJoinLobby>( EMsg.ClientMMSJoinLobby )
             {
@@ -197,12 +222,13 @@ namespace SteamKit2
                     app_id = appId,
                     persona_name = personaName,
                     steam_id_lobby = lobbySteamId
-                }
+                },
+                SourceJobID = Client.GetNextJobID()
             };
 
             Send( joinLobby, appId );
 
-            return true;
+            return new AsyncJob<JoinLobbyCallback>( Client, joinLobby.SourceJobID );
         }
 
         /// <summary>
@@ -210,8 +236,8 @@ namespace SteamKit2
         /// </summary>
         /// <param name="appId">ID of app the lobby belongs to.</param>
         /// <param name="lobbySteamId">The SteamID of the lobby that should be left.</param>
-        /// <returns><c>false</c>, if the request could not be submitted i.e. not yet logged in. Otherwise, <c>true</c>.</returns>
-        public void LeaveLobby( uint appId, SteamID lobbySteamId )
+        /// <returns>An <see cref="AsyncJob{LeaveLobbyCallback}"/>.</returns>
+        public AsyncJob<LeaveLobbyCallback> LeaveLobby( uint appId, SteamID lobbySteamId )
         {
             var leaveLobby = new ClientMsgProtobuf<CMsgClientMMSLeaveLobby>( EMsg.ClientMMSLeaveLobby )
             {
@@ -219,10 +245,13 @@ namespace SteamKit2
                 {
                     app_id = appId,
                     steam_id_lobby = lobbySteamId
-                }
+                },
+                SourceJobID = Client.GetNextJobID()
             };
 
             Send( leaveLobby, appId );
+
+            return new AsyncJob<LeaveLobbyCallback>( Client, leaveLobby.SourceJobID );
         }
 
         /// <summary>
@@ -230,7 +259,8 @@ namespace SteamKit2
         /// </summary>
         /// <param name="appId">The ID of app which we're attempting to obtain lobby data for.</param>
         /// <param name="lobbySteamId">The SteamID of the lobby whose data is being requested.</param>
-        public void GetLobbyData( uint appId, SteamID lobbySteamId )
+        /// <returns>An <see cref="AsyncJob{LobbyDataCallback}"/>.</returns>
+        public AsyncJob<LobbyDataCallback> GetLobbyData( uint appId, SteamID lobbySteamId )
         {
             var getLobbyData = new ClientMsgProtobuf<CMsgClientMMSGetLobbyData>( EMsg.ClientMMSGetLobbyData )
             {
@@ -238,10 +268,13 @@ namespace SteamKit2
                 {
                     app_id = appId,
                     steam_id_lobby = lobbySteamId
-                }
+                },
+                SourceJobID = Client.GetNextJobID()
             };
 
             Send( getLobbyData, appId );
+
+            return new AsyncJob<LobbyDataCallback>( Client, getLobbyData.SourceJobID );
         }
 
         /// <summary>
@@ -318,7 +351,26 @@ namespace SteamKit2
             var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSCreateLobbyResponse>( packetMsg );
             var body = lobbyListResponse.Body;
 
+            if ( createLobbyRequests.TryRemove( lobbyListResponse.TargetJobID, out var request ) )
+            {
+                var members = new List<Lobby.Member>( 1 ) { new Lobby.Member( Client.SteamID, request.persona_name_owner ) };
+
+                lobbyCache.CacheLobby( request.app_id, new Lobby(
+                    body.steam_id_lobby,
+                    ( ELobbyType )request.lobby_type,
+                    request.lobby_flags,
+                    Client.SteamID,
+                    Lobby.DecodeMetadata( request.metadata ),
+                    request.max_members,
+                    1,
+                    members.AsReadOnly(),
+                    null,
+                    null
+                ) );
+            }
+
             Client.PostCallback( new CreateLobbyCallback(
+                lobbyListResponse.TargetJobID,
                 body.app_id,
                 ( EResult )body.eresult,
                 body.steam_id_lobby
@@ -331,6 +383,7 @@ namespace SteamKit2
             var body = lobbyListResponse.Body;
 
             Client.PostCallback( new SetLobbyDataCallback(
+                lobbyListResponse.TargetJobID,
                 body.app_id,
                 ( EResult )body.eresult,
                 body.steam_id_lobby
@@ -343,6 +396,7 @@ namespace SteamKit2
             var body = setLobbyOwnerResponse.Body;
 
             Client.PostCallback( new SetLobbyOwnerCallback(
+                setLobbyOwnerResponse.TargetJobID,
                 body.app_id,
                 ( EResult )body.eresult,
                 body.steam_id_lobby
@@ -421,6 +475,7 @@ namespace SteamKit2
             }
 
             Client.PostCallback( new JoinLobbyCallback(
+                joinLobbyResponse.TargetJobID,
                 body.app_id,
                 ( EChatRoomEnterResponse )body.chat_room_enter_response,
                 joinedLobby
@@ -434,10 +489,11 @@ namespace SteamKit2
 
             if ( body.eresult == ( int )EResult.OK )
             {
-                lobbyCache.RemoveLobbyMember( body.app_id, body.steam_id_lobby, Client.SteamID );
+                lobbyCache.ClearLobbyMembers( body.app_id, body.steam_id_lobby );
             }
 
             Client.PostCallback( new LeaveLobbyCallback(
+                leaveLobbyResponse.TargetJobID,
                 body.app_id,
                 ( EResult )body.eresult,
                 body.steam_id_lobby
@@ -450,6 +506,14 @@ namespace SteamKit2
             var body = lobbyListResponse.Body;
 
             var cachedLobby = lobbyCache.GetLobby( body.app_id, body.steam_id_lobby );
+            var members = body.members.Count == 0
+                ? cachedLobby.Members
+                : body.members.ConvertAll( member => new Lobby.Member(
+                    member.steam_id,
+                    member.persona_name,
+                    Lobby.DecodeMetadata( member.metadata )
+                ) );
+
             var updatedLobby = new Lobby(
                 body.steam_id_lobby,
                 ( ELobbyType )body.lobby_type,
@@ -458,18 +522,18 @@ namespace SteamKit2
                 Lobby.DecodeMetadata( body.metadata ),
                 body.max_members,
                 body.num_members,
-                body.members.ConvertAll( member => new Lobby.Member(
-                    member.steam_id,
-                    member.persona_name,
-                    Lobby.DecodeMetadata( member.metadata )
-                ) ),
+                members,
                 cachedLobby?.Distance,
                 cachedLobby?.Weight
             );
 
             lobbyCache.CacheLobby( body.app_id, updatedLobby );
 
-            Client.PostCallback( new LobbyDataCallback( body.app_id, updatedLobby ) );
+            Client.PostCallback( new LobbyDataCallback(
+                lobbyListResponse.TargetJobID,
+                body.app_id,
+                updatedLobby
+            ) );
         }
 
         void HandleUserJoinedLobby( IPacketMsg packetMsg )
@@ -494,6 +558,11 @@ namespace SteamKit2
             var body = userLeftLobby.Body;
 
             var leavingMember = lobbyCache.RemoveLobbyMember( body.app_id, body.steam_id_lobby, body.steam_id_user );
+
+            if ( leavingMember?.SteamID == Client.SteamID )
+            {
+                lobbyCache.ClearLobbyMembers( body.app_id, body.steam_id_lobby );
+            }
 
             Client.PostCallback( new UserLeftLobbyCallback(
                 body.app_id,

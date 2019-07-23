@@ -249,12 +249,7 @@ namespace SteamKit2
             public int NumMembers { get; }
 
             /// <summary>
-            /// A list of lobby members, this does not include the lobby owner. Please keep in mind that Steam
-            /// does not provide member details for lobbies returned in a lobby list. As such, lobbies that
-            /// have been obtained/updated as a result of calling <see cref="SteamMatchmaking.GetLobbyList"/>
-            /// may have an empty (or stale) member list, whose count does not correlate with the value of
-            /// <see cref="NumMembers"/>. Additionally, lobby owners will not see themselves in the member
-            /// list until another user joins the lobby.
+            /// A list of lobby members. This will only be populated for the user's current lobby.
             /// </summary>
             public IReadOnlyList<Member> Members { get; }
 
@@ -269,7 +264,7 @@ namespace SteamKit2
             public long? Weight { get; }
 
             static readonly IReadOnlyDictionary<string, string> EmptyMetadata =
-                new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+                new ReadOnlyDictionary<string, string>( new Dictionary<string, string>() );
 
             static readonly IReadOnlyList<Member> EmptyMembers = new List<Member>().AsReadOnly();
 
@@ -290,6 +285,11 @@ namespace SteamKit2
 
             internal static byte[] EncodeMetadata( IReadOnlyDictionary<string, string> metadata )
             {
+                if ( metadata == null )
+                {
+                    metadata = EmptyMetadata;
+                }
+
                 var keyValue = new KeyValue( "" );
 
                 foreach ( var entry in metadata )
@@ -330,7 +330,7 @@ namespace SteamKit2
                     }
                 }
 
-                return new ReadOnlyDictionary<string, string>(metadata);
+                return new ReadOnlyDictionary<string, string>( metadata );
             }
         }
     }

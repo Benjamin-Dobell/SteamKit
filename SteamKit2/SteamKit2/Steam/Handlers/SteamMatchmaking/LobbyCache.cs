@@ -62,17 +62,37 @@ namespace SteamKit2
                 }
 
                 var members = lobby.Members.Where( m => !m.Equals( removedMember ) ).ToList();
-                UpdateLobbyMembers( appId, lobby, members.AsReadOnly() );
+
+                if ( members.Count > 0 )
+                {
+                    UpdateLobbyMembers( appId, lobby, members.AsReadOnly() );
+                }
+                else
+                {
+                    // Steam deletes lobbies that contain no members
+                    DeleteLobby( appId, lobbySteamId );
+                }
+
                 return removedMember;
             }
 
-            void UpdateLobbyMembers( uint appId, Lobby lobby, IReadOnlyList<Lobby.Member> members )
+            public void ClearLobbyMembers( uint appId, SteamID lobbySteamId )
+            {
+                var lobby = GetLobby( appId, lobbySteamId );
+
+                if ( lobby != null )
+                {
+                    UpdateLobbyMembers( appId, lobby, null, null );
+                }
+            }
+
+            void UpdateLobbyMembers( uint appId, Lobby lobby, SteamID owner, IReadOnlyList<Lobby.Member> members )
             {
                 CacheLobby( appId, new Lobby(
                     lobby.SteamID,
                     lobby.LobbyType,
                     lobby.LobbyFlags,
-                    lobby.OwnerSteamID,
+                    owner,
                     lobby.Metadata,
                     lobby.MaxMembers,
                     lobby.NumMembers,
@@ -82,9 +102,25 @@ namespace SteamKit2
                 ) );
             }
 
+            void UpdateLobbyMembers( uint appId, Lobby lobby, IReadOnlyList<Lobby.Member> members )
+            {
+                UpdateLobbyMembers( appId, lobby, lobby.OwnerSteamID, members );
+            }
+
             ConcurrentDictionary<SteamID, Lobby> GetAppLobbies( uint appId )
             {
                 return lobbies.GetOrAdd( appId, k => new ConcurrentDictionary<SteamID, Lobby>() );
+            }
+
+            Lobby DeleteLobby( uint appId, SteamID lobbySteamId )
+            {
+                if ( !lobbies.TryGetValue( appId, out var appLobbies ) )
+                {
+                    return null;
+                }
+
+                appLobbies.TryRemove( lobbySteamId, out var lobby );
+                return lobby;
             }
         }
     }

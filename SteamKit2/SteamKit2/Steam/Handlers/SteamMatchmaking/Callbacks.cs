@@ -52,8 +52,9 @@ namespace SteamKit2
             /// </summary>
             public SteamID LobbySteamID { get; }
 
-            internal CreateLobbyCallback( uint appId, EResult res, SteamID lobbySteamId )
+            internal CreateLobbyCallback( JobID jobId, uint appId, EResult res, SteamID lobbySteamId )
             {
+                JobID = jobId;
                 AppID = appId;
                 Result = res;
                 LobbySteamID = lobbySteamId;
@@ -80,8 +81,9 @@ namespace SteamKit2
             /// </summary>
             public SteamID LobbySteamID { get; }
 
-            internal SetLobbyDataCallback( uint appId, EResult res, SteamID lobbySteamId )
+            internal SetLobbyDataCallback( JobID jobId, uint appId, EResult res, SteamID lobbySteamId )
             {
+                JobID = jobId;
                 AppID = appId;
                 Result = res;
                 LobbySteamID = lobbySteamId;
@@ -108,8 +110,9 @@ namespace SteamKit2
             /// </summary>
             public SteamID LobbySteamID { get; }
 
-            internal SetLobbyOwnerCallback( uint appId, EResult res, SteamID lobbySteamId )
+            internal SetLobbyOwnerCallback( JobID jobId, uint appId, EResult res, SteamID lobbySteamId )
             {
+                JobID = jobId;
                 AppID = appId;
                 Result = res;
                 LobbySteamID = lobbySteamId;
@@ -137,8 +140,9 @@ namespace SteamKit2
             /// </summary>
             public Lobby Lobby { get; }
 
-            internal JoinLobbyCallback( uint appId, EChatRoomEnterResponse res, Lobby lobby )
+            internal JoinLobbyCallback( JobID jobId, uint appId, EChatRoomEnterResponse res, Lobby lobby )
             {
+                JobID = jobId;
                 AppID = appId;
                 ChatRoomEnterResponse = res;
                 Lobby = lobby;
@@ -165,8 +169,9 @@ namespace SteamKit2
             /// </summary>
             public SteamID LobbySteamID { get; }
 
-            internal LeaveLobbyCallback( uint appId, EResult res, SteamID lobbySteamId )
+            internal LeaveLobbyCallback( JobID jobId, uint appId, EResult res, SteamID lobbySteamId )
             {
+                JobID = jobId;
                 AppID = appId;
                 Result = res;
                 LobbySteamID = lobbySteamId;
@@ -188,8 +193,9 @@ namespace SteamKit2
             /// </summary>
             public Lobby Lobby { get; }
 
-            internal LobbyDataCallback( uint appId, Lobby lobby )
+            internal LobbyDataCallback( JobID jobId, uint appId, Lobby lobby )
             {
+                JobID = jobId;
                 AppID = appId;
                 Lobby = lobby;
             }
