@@ -353,20 +353,23 @@ namespace SteamKit2
 
             if ( createLobbyRequests.TryRemove( lobbyListResponse.TargetJobID, out var request ) )
             {
-                var members = new List<Lobby.Member>( 1 ) { new Lobby.Member( Client.SteamID, request.persona_name_owner ) };
+                if ( body.eresult == ( int )EResult.OK && request != null )
+                {
+                    var members = new List<Lobby.Member>( 1 ) { new Lobby.Member( Client.SteamID, request.persona_name_owner ) };
 
-                lobbyCache.CacheLobby( request.app_id, new Lobby(
-                    body.steam_id_lobby,
-                    ( ELobbyType )request.lobby_type,
-                    request.lobby_flags,
-                    Client.SteamID,
-                    Lobby.DecodeMetadata( request.metadata ),
-                    request.max_members,
-                    1,
-                    members.AsReadOnly(),
-                    null,
-                    null
-                ) );
+                    lobbyCache.CacheLobby( request.app_id, new Lobby(
+                        body.steam_id_lobby,
+                        ( ELobbyType )request.lobby_type,
+                        request.lobby_flags,
+                        Client.SteamID,
+                        Lobby.DecodeMetadata( request.metadata ),
+                        request.max_members,
+                        1,
+                        members.AsReadOnly(),
+                        null,
+                        null
+                    ) );
+                }
             }
 
             Client.PostCallback( new CreateLobbyCallback(
