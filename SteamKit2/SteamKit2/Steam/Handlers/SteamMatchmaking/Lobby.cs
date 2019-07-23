@@ -159,7 +159,7 @@ namespace SteamKit2
             }
 
             /// <summary>
-            /// Can be used to filter lobbies by comparing a string against a value in each lobby's metadata.
+            /// Represents a Steam user within a lobby.
             /// </summary>
             public sealed class Member
             {
