@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using SteamKit2.Internal;
 
@@ -181,7 +182,7 @@ namespace SteamKit2
                 {
                     SteamID = steamId;
                     PersonaName = personaName;
-                    Metadata = metadata ?? new Dictionary<string, string>();
+                    Metadata = metadata ?? EmptyMetadata;
                 }
 
                 /// <summary>
@@ -267,18 +268,22 @@ namespace SteamKit2
             /// </summary>
             public long? Weight { get; }
 
+            static readonly IReadOnlyDictionary<string, string> EmptyMetadata =
+                new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+
+            static readonly IReadOnlyList<Member> EmptyMembers = new List<Member>().AsReadOnly();
+
             internal Lobby( SteamID steamId, ELobbyType lobbyType, int lobbyFlags, SteamID ownerSteamId, IReadOnlyDictionary<string, string> metadata,
-                int maxMembers,
-                int numMembers, IReadOnlyList<Member> members, float? distance, long? weight )
+                int maxMembers, int numMembers, IReadOnlyList<Member> members, float? distance, long? weight )
             {
                 SteamID = steamId;
                 LobbyType = lobbyType;
                 LobbyFlags = lobbyFlags;
                 OwnerSteamID = ownerSteamId;
-                Metadata = metadata ?? new Dictionary<string, string>();
+                Metadata = metadata ?? EmptyMetadata;
                 MaxMembers = maxMembers;
                 NumMembers = numMembers;
-                Members = members ?? new List<Member>();
+                Members = members ?? EmptyMembers;
                 Distance = distance;
                 Weight = weight;
             }
@@ -303,7 +308,7 @@ namespace SteamKit2
                 }
             }
 
-            internal static Dictionary<string, string> DecodeMetadata( byte[] buffer )
+            internal static ReadOnlyDictionary<string, string> DecodeMetadata( byte[] buffer )
             {
                 var metadata = new Dictionary<string, string>();
 
@@ -325,7 +330,7 @@ namespace SteamKit2
                     }
                 }
 
-                return metadata;
+                return new ReadOnlyDictionary<string, string>(metadata);
             }
         }
     }

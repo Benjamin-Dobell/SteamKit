@@ -45,7 +45,7 @@ namespace SteamKit2
                 members.AddRange( lobby.Members );
                 members.Add( addedMember );
 
-                UpdateLobbyMembers( appId, lobby, members );
+                UpdateLobbyMembers( appId, lobby, members.AsReadOnly() );
 
                 return addedMember;
             }
@@ -62,7 +62,7 @@ namespace SteamKit2
                 }
 
                 var members = lobby.Members.Where( m => !m.Equals( removedMember ) ).ToList();
-                UpdateLobbyMembers( appId, lobby, members );
+                UpdateLobbyMembers( appId, lobby, members.AsReadOnly() );
                 return removedMember;
             }
 
