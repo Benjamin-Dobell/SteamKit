@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using SteamKit2.Internal;
 
 namespace SteamKit2
@@ -12,9 +13,9 @@ namespace SteamKit2
     {
         readonly Dictionary<EMsg, Action<IPacketMsg>> dispatchMap;
 
-        readonly LobbyCache lobbyCache = new LobbyCache();
+        readonly ConcurrentDictionary<JobID, ProtoBuf.IExtensible> lobbyManipulationRequests = new ConcurrentDictionary<JobID, ProtoBuf.IExtensible>();
 
-        readonly ConcurrentDictionary<JobID, CMsgClientMMSCreateLobby> createLobbyRequests = new ConcurrentDictionary<JobID, CMsgClientMMSCreateLobby>();
+        readonly LobbyCache lobbyCache = new LobbyCache();
 
         internal SteamMatchmaking()
         {
@@ -69,7 +70,7 @@ namespace SteamKit2
 
             Send( createLobby, appId );
 
-            createLobbyRequests[ createLobby.SourceJobID ] = createLobby.Body;
+            lobbyManipulationRequests[ createLobby.SourceJobID ] = createLobby.Body;
             return new AsyncJob<CreateLobbyCallback>( Client, createLobby.SourceJobID );
         }
 
@@ -103,6 +104,7 @@ namespace SteamKit2
 
             Send( setLobbyData, appId );
 
+            lobbyManipulationRequests[ setLobbyData.SourceJobID ] = setLobbyData.Body;
             return new AsyncJob<SetLobbyDataCallback>( Client, setLobbyData.SourceJobID );
         }
 
@@ -133,6 +135,7 @@ namespace SteamKit2
 
             Send( setLobbyData, appId );
 
+            lobbyManipulationRequests[ setLobbyData.SourceJobID ] = setLobbyData.Body;
             return new AsyncJob<SetLobbyDataCallback>( Client, setLobbyData.SourceJobID );
         }
 
@@ -158,6 +161,7 @@ namespace SteamKit2
 
             Send( setLobbyOwner, appId );
 
+            lobbyManipulationRequests[ setLobbyOwner.SourceJobID ] = setLobbyOwner.Body;
             return new AsyncJob<SetLobbyOwnerCallback>( Client, setLobbyOwner.SourceJobID );
         }
 
@@ -351,24 +355,28 @@ namespace SteamKit2
             var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSCreateLobbyResponse>( packetMsg );
             var body = lobbyListResponse.Body;
 
-            if ( createLobbyRequests.TryRemove( lobbyListResponse.TargetJobID, out var request ) )
+            if ( lobbyManipulationRequests.TryRemove( lobbyListResponse.TargetJobID, out var request ) )
             {
                 if ( body.eresult == ( int )EResult.OK && request != null )
                 {
-                    var members = new List<Lobby.Member>( 1 ) { new Lobby.Member( Client.SteamID, request.persona_name_owner ) };
+                    var createLobby = ( CMsgClientMMSCreateLobby )request;
+                    var members = new List<Lobby.Member>( 1 ) { new Lobby.Member( Client.SteamID, createLobby.persona_name_owner ) };
 
-                    lobbyCache.CacheLobby( request.app_id, new Lobby(
-                        body.steam_id_lobby,
-                        ( ELobbyType )request.lobby_type,
-                        request.lobby_flags,
-                        Client.SteamID,
-                        Lobby.DecodeMetadata( request.metadata ),
-                        request.max_members,
-                        1,
-                        members.AsReadOnly(),
-                        null,
-                        null
-                    ) );
+                    lobbyCache.CacheLobby(
+                        createLobby.app_id,
+                        new Lobby(
+                            body.steam_id_lobby,
+                            ( ELobbyType )createLobby.lobby_type,
+                            createLobby.lobby_flags,
+                            Client.SteamID,
+                            Lobby.DecodeMetadata( createLobby.metadata ),
+                            createLobby.max_members,
+                            1,
+                            members.AsReadOnly(),
+                            null,
+                            null
+                        )
+                    );
                 }
             }
 
@@ -385,6 +393,47 @@ namespace SteamKit2
             var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSSetLobbyDataResponse>( packetMsg );
             var body = lobbyListResponse.Body;
 
+            if ( lobbyManipulationRequests.TryRemove( lobbyListResponse.TargetJobID, out var request ) )
+            {
+                if ( body.eresult == ( int )EResult.OK && request != null )
+                {
+                    var setLobbyData = ( CMsgClientMMSSetLobbyData )request;
+                    var lobby = lobbyCache.GetLobby( setLobbyData.app_id, setLobbyData.steam_id_lobby );
+
+                    if ( lobby != null )
+                    {
+                        var metadata = Lobby.DecodeMetadata( setLobbyData.metadata );
+
+                        if ( setLobbyData.steam_id_member == 0 )
+                        {
+                            lobbyCache.CacheLobby(
+                                setLobbyData.app_id,
+                                new Lobby(
+                                    lobby.SteamID,
+                                    ( ELobbyType )setLobbyData.lobby_type,
+                                    setLobbyData.lobby_flags,
+                                    lobby.OwnerSteamID,
+                                    metadata,
+                                    setLobbyData.max_members,
+                                    lobby.NumMembers,
+                                    lobby.Members,
+                                    lobby.Distance,
+                                    lobby.Weight
+                                )
+                            );
+                        }
+                        else
+                        {
+                            var members = lobby.Members.Select( m =>
+                                m.SteamID == setLobbyData.steam_id_member ? new Lobby.Member( m.SteamID, m.PersonaName, metadata ) : m
+                            ).ToList();
+
+                            lobbyCache.UpdateLobbyMembers( setLobbyData.app_id, lobby, members );
+                        }
+                    }
+                }
+            }
+
             Client.PostCallback( new SetLobbyDataCallback(
                 lobbyListResponse.TargetJobID,
                 body.app_id,
@@ -397,6 +446,15 @@ namespace SteamKit2
         {
             var setLobbyOwnerResponse = new ClientMsgProtobuf<CMsgClientMMSSetLobbyOwnerResponse>( packetMsg );
             var body = setLobbyOwnerResponse.Body;
+
+            if ( lobbyManipulationRequests.TryRemove( setLobbyOwnerResponse.TargetJobID, out var request ) )
+            {
+                if ( body.eresult == ( int )EResult.OK && request != null )
+                {
+                    var setLobbyOwner = ( CMsgClientMMSSetLobbyOwner )request;
+                    lobbyCache.UpdateLobbyOwner( body.app_id, body.steam_id_lobby, setLobbyOwner.steam_id_new_owner );
+                }
+            }
 
             Client.PostCallback( new SetLobbyOwnerCallback(
                 setLobbyOwnerResponse.TargetJobID,
@@ -543,15 +601,21 @@ namespace SteamKit2
         {
             var userJoinedLobby = new ClientMsgProtobuf<CMsgClientMMSUserJoinedLobby>( packetMsg );
             var body = userJoinedLobby.Body;
-            var joiningMember = lobbyCache.AddLobbyMember( body.app_id, body.steam_id_lobby, body.steam_id_user, body.persona_name );
 
-            if ( joiningMember != null )
+            var lobby = lobbyCache.GetLobby( body.app_id, body.steam_id_lobby );
+
+            if ( lobby != null && lobby.Members.Count > 0 )
             {
-                Client.PostCallback( new UserJoinedLobbyCallback(
-                    body.app_id,
-                    body.steam_id_lobby,
-                    joiningMember
-                ) );
+                var joiningMember = lobbyCache.AddLobbyMember( body.app_id, lobby, body.steam_id_user, body.persona_name );
+
+                if ( joiningMember != null )
+                {
+                    Client.PostCallback( new UserJoinedLobbyCallback(
+                        body.app_id,
+                        body.steam_id_lobby,
+                        joiningMember
+                    ) );
+                }
             }
         }
 
@@ -560,18 +624,23 @@ namespace SteamKit2
             var userLeftLobby = new ClientMsgProtobuf<CMsgClientMMSUserLeftLobby>( packetMsg );
             var body = userLeftLobby.Body;
 
-            var leavingMember = lobbyCache.RemoveLobbyMember( body.app_id, body.steam_id_lobby, body.steam_id_user );
+            var lobby = lobbyCache.GetLobby( body.app_id, body.steam_id_lobby );
 
-            if ( leavingMember?.SteamID == Client.SteamID )
+            if ( lobby != null && lobby.Members.Count > 0 )
             {
-                lobbyCache.ClearLobbyMembers( body.app_id, body.steam_id_lobby );
-            }
+                var leavingMember = lobbyCache.RemoveLobbyMember( body.app_id, lobby, body.steam_id_user );
 
-            Client.PostCallback( new UserLeftLobbyCallback(
-                body.app_id,
-                body.steam_id_lobby,
-                leavingMember
-            ) );
+                if ( leavingMember?.SteamID == Client.SteamID )
+                {
+                    lobbyCache.ClearLobbyMembers( body.app_id, body.steam_id_lobby );
+                }
+
+                Client.PostCallback( new UserLeftLobbyCallback(
+                    body.app_id,
+                    body.steam_id_lobby,
+                    leavingMember
+                ) );
+            }
         }
 
         #endregion

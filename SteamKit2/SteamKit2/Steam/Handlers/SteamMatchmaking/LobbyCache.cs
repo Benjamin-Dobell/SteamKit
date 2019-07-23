@@ -21,16 +21,8 @@ namespace SteamKit2
                 GetAppLobbies( appId )[ lobby.SteamID ] = lobby;
             }
 
-            public Lobby.Member AddLobbyMember( uint appId, SteamID lobbySteamId, SteamID memberId, string personaName )
+            public Lobby.Member AddLobbyMember( uint appId, Lobby lobby, SteamID memberId, string personaName )
             {
-                var lobby = GetLobby( appId, lobbySteamId );
-
-                if ( lobby == null )
-                {
-                    // Unknown lobby
-                    return null;
-                }
-
                 var existingMember = lobby.Members.FirstOrDefault( m => m.SteamID == memberId );
 
                 if ( existingMember != null )
@@ -50,14 +42,12 @@ namespace SteamKit2
                 return addedMember;
             }
 
-            public Lobby.Member RemoveLobbyMember( uint appId, SteamID lobbySteamId, SteamID memberId )
+            public Lobby.Member RemoveLobbyMember( uint appId, Lobby lobby, SteamID memberId )
             {
-                var lobby = GetLobby( appId, lobbySteamId );
-                var removedMember = lobby?.Members.FirstOrDefault( m => m.SteamID.Equals( memberId ) );
+                var removedMember = lobby.Members.FirstOrDefault( m => m.SteamID.Equals( memberId ) );
 
                 if ( removedMember == null )
                 {
-                    // Not in a known lobby
                     return null;
                 }
 
@@ -70,7 +60,7 @@ namespace SteamKit2
                 else
                 {
                     // Steam deletes lobbies that contain no members
-                    DeleteLobby( appId, lobbySteamId );
+                    DeleteLobby( appId, lobby.SteamID );
                 }
 
                 return removedMember;
@@ -84,6 +74,26 @@ namespace SteamKit2
                 {
                     UpdateLobbyMembers( appId, lobby, null, null );
                 }
+            }
+
+            public void UpdateLobbyOwner( uint appId, SteamID lobbySteamId, SteamID ownerSteamId )
+            {
+                var lobby = GetLobby( appId, lobbySteamId );
+
+                if ( lobby != null )
+                {
+                    UpdateLobbyMembers( appId, lobby, ownerSteamId, lobby.Members );
+                }
+            }
+
+            public void UpdateLobbyMembers( uint appId, Lobby lobby, IReadOnlyList<Lobby.Member> members )
+            {
+                UpdateLobbyMembers( appId, lobby, lobby.OwnerSteamID, members );
+            }
+
+            public void UpdateLobbyMembers( uint appId, Lobby lobby, List<Lobby.Member> members )
+            {
+                UpdateLobbyMembers( appId, lobby, lobby.OwnerSteamID, members.AsReadOnly() );
             }
 
             void UpdateLobbyMembers( uint appId, Lobby lobby, SteamID owner, IReadOnlyList<Lobby.Member> members )
@@ -100,11 +110,6 @@ namespace SteamKit2
                     lobby.Distance,
                     lobby.Weight
                 ) );
-            }
-
-            void UpdateLobbyMembers( uint appId, Lobby lobby, IReadOnlyList<Lobby.Member> members )
-            {
-                UpdateLobbyMembers( appId, lobby, lobby.OwnerSteamID, members );
             }
 
             ConcurrentDictionary<SteamID, Lobby> GetAppLobbies( uint appId )
