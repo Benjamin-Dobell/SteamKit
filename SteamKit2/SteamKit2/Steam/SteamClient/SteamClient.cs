@@ -391,9 +391,16 @@ namespace SteamKit2
 
             jobManager.SetTimeoutsEnabled( false );
 
+            ClearHandlerCaches();
+
             PostCallback( new DisconnectedCallback( userInitiated ) );
         }
 
+
+        void ClearHandlerCaches()
+        {
+            GetHandler<SteamMatchmaking>()?.ClearLobbyCache();
+        }
 
         void HandleCMList( IPacketMsg packetMsg )
         {

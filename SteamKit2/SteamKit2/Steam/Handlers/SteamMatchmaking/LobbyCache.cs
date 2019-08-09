@@ -96,6 +96,11 @@ namespace SteamKit2
                 UpdateLobbyMembers( appId, lobby, lobby.OwnerSteamID, members.AsReadOnly() );
             }
 
+            public void Clear()
+            {
+                lobbies.Clear();
+            }
+
             void UpdateLobbyMembers( uint appId, Lobby lobby, SteamID owner, IReadOnlyList<Lobby.Member> members )
             {
                 CacheLobby( appId, new Lobby(

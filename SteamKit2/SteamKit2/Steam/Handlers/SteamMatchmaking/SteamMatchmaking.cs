@@ -349,6 +349,11 @@ namespace SteamKit2
             }
         }
 
+        internal void ClearLobbyCache()
+        {
+            lobbyCache.Clear();
+        }
+
         AsyncJob<T> MonitorJob<T>( AsyncJob<T> job )
             where T : CallbackMsg
         {
