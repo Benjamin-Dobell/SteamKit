@@ -3175,14 +3175,17 @@ namespace SteamKit2
 		FriendsOnly = 1,
 		Public = 2,
 		Invisible = 3,
+		PrivateUnique = 4,
 	}
 	public enum ELobbyFilterType
 	{
 		String = 0,
 		Numerical = 1,
+		SlotsAvailable = 2,
+		NearValue = 3,
 		Distance = 4,
 	}
-	public enum ELobbyFilterComparison
+	public enum ELobbyComparison
 	{
 		EqualToOrLessThan = -2,
 		LessThan = -1,
@@ -3191,7 +3194,7 @@ namespace SteamKit2
 		EqualToOrGreaterThan = 2,
 		NotEqual = 3,
 	}
-	public enum ELobbyFilterDistance
+	public enum ELobbyDistanceFilter
 	{
 		Close = 0,
 		Default = 1,

@@ -62,7 +62,7 @@ namespace SteamKit2
             }
 
             /// <summary>
-            /// Can be used to filter lobbies geographically.
+            /// Can be used to filter lobbies geographically (based on IP according to Steam's IP database).
             /// </summary>
             public sealed class DistanceFilter : Filter
             {
@@ -88,6 +88,39 @@ namespace SteamKit2
                 {
                     var filter = base.Serialize();
                     filter.value = ( ( int )Value ).ToString();
+                    return filter;
+                }
+            }
+
+            /// <summary>
+            /// Can be used to filter lobbies with a metadata value closest to the specified value. Multiple
+            /// near filters can be specified, with former filters taking precedence over latter filters.
+            /// </summary>
+            public sealed class NearValueFilter : Filter
+            {
+                /// <summary>
+                /// Integer value that lobbies' metadata value should be close to.
+                /// </summary>
+                public int Value { get; }
+
+                /// <summary>
+                /// Initializes a new instance of the <see cref="NearValueFilter"/> class.
+                /// </summary>
+                /// <param name="key">The metadata key this filter pertains to.</param>
+                /// <param name="value">Integer value to compare against.</param>
+                public NearValueFilter( string key, int value ) : base( ELobbyFilterType.NearValue, key, ELobbyComparison.Equal )
+                {
+                    Value = value;
+                }
+
+                /// <summary>
+                /// Serializes the slots available filter into a representation used internally by SteamMatchmaking.
+                /// </summary>
+                /// <returns>A protobuf serializable representation of this filter.</returns>
+                public override CMsgClientMMSGetLobbyList.Filter Serialize()
+                {
+                    var filter = base.Serialize();
+                    filter.value = Value.ToString();
                     return filter;
                 }
             }
@@ -121,6 +154,38 @@ namespace SteamKit2
                 {
                     var filter = base.Serialize();
                     filter.value = Value.ToString();
+                    return filter;
+                }
+            }
+
+            /// <summary>
+            /// Can be used to filter lobbies by minimum number of slots available.
+            /// </summary>
+            public sealed class SlotsAvailableFilter : Filter
+            {
+                /// <summary>
+                /// Minumum number of slots available in the lobby.
+                /// </summary>
+                public int SlotsAvailable { get; }
+
+                /// <summary>
+                /// Initializes a new instance of the <see cref="SlotsAvailableFilter"/> class.
+                /// </summary>
+                /// <param name="key">The metadata key this filter pertains to.</param>
+                /// <param name="slotsAvailable">Integer value to compare against.</param>
+                public SlotsAvailableFilter( int slotsAvailable ) : base( ELobbyFilterType.SlotsAvailable, "", ELobbyComparison.Equal )
+                {
+                    SlotsAvailable = slotsAvailable;
+                }
+
+                /// <summary>
+                /// Serializes the slots available filter into a representation used internally by SteamMatchmaking.
+                /// </summary>
+                /// <returns>A protobuf serializable representation of this filter.</returns>
+                public override CMsgClientMMSGetLobbyList.Filter Serialize()
+                {
+                    var filter = base.Serialize();
+                    filter.value = SlotsAvailable.ToString();
                     return filter;
                 }
             }
