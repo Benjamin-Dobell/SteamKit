@@ -1480,6 +1480,7 @@ enum ELobbyType
     FriendsOnly = 1;
     Public = 2;
     Invisible = 3;
+    PrivateUnique = 4;
 };
 
 enum ELobbyFilterType
@@ -1489,7 +1490,7 @@ enum ELobbyFilterType
     Distance = 4;
 };
 
-enum ELobbyFilterComparison
+enum ELobbyComparison
 {
     EqualToOrLessThan = -2;
     LessThan = -1;
@@ -1499,7 +1500,7 @@ enum ELobbyFilterComparison
     NotEqual = 3;
 };
 
-public enum ELobbyFilterDistance
+public enum ELobbyDistanceFilter
 {
     Close = 0;
     Default = 1;

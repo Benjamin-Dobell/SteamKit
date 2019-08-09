@@ -32,7 +32,7 @@ namespace SteamKit2
                 /// <summary>
                 /// The comparison method used by this filter.
                 /// </summary>
-                public ELobbyFilterComparison Comparison { get; }
+                public ELobbyComparison Comparison { get; }
 
                 /// <summary>
                 /// Base constructor for all filter sub-classes.
@@ -40,7 +40,7 @@ namespace SteamKit2
                 /// <param name="filterType">The type of filter.</param>
                 /// <param name="key">The metadata key this filter pertains to.</param>
                 /// <param name="comparison">The comparison method used by this filter.</param>
-                protected Filter( ELobbyFilterType filterType, string key, ELobbyFilterComparison comparison )
+                protected Filter( ELobbyFilterType filterType, string key, ELobbyComparison comparison )
                 {
                     FilterType = filterType;
                     Key = key;
@@ -69,13 +69,13 @@ namespace SteamKit2
                 /// <summary>
                 /// Steam distance filter value.
                 /// </summary>
-                public ELobbyFilterDistance Value { get; }
+                public ELobbyDistanceFilter Value { get; }
 
                 /// <summary>
                 /// Initializes a new instance of the <see cref="DistanceFilter"/> class.
                 /// </summary>
                 /// <param name="value">Steam distance filter value.</param>
-                public DistanceFilter( ELobbyFilterDistance value ) : base( ELobbyFilterType.Distance, "", ELobbyFilterComparison.Equal )
+                public DistanceFilter( ELobbyDistanceFilter value ) : base( ELobbyFilterType.Distance, "", ELobbyComparison.Equal )
                 {
                     Value = value;
                 }
@@ -108,7 +108,7 @@ namespace SteamKit2
                 /// <param name="key">The metadata key this filter pertains to.</param>
                 /// <param name="comparison">The comparison method used by this filter.</param>
                 /// <param name="value">Integer value to compare against.</param>
-                public NumericalFilter( string key, ELobbyFilterComparison comparison, int value ) : base( ELobbyFilterType.Numerical, key, comparison )
+                public NumericalFilter( string key, ELobbyComparison comparison, int value ) : base( ELobbyFilterType.Numerical, key, comparison )
                 {
                     Value = value;
                 }
@@ -141,7 +141,7 @@ namespace SteamKit2
                 /// <param name="key">The metadata key this filter pertains to.</param>
                 /// <param name="comparison">The comparison method used by this filter.</param>
                 /// <param name="value">String value to compare against.</param>
-                public StringFilter( string key, ELobbyFilterComparison comparison, string value ) : base( ELobbyFilterType.String, key, comparison )
+                public StringFilter( string key, ELobbyComparison comparison, string value ) : base( ELobbyFilterType.String, key, comparison )
                 {
                     Value = value;
                 }
