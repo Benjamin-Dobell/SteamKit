@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using SteamKit2.Internal;
 
 namespace SteamKit2
@@ -71,7 +72,7 @@ namespace SteamKit2
             Send( createLobby, appId );
 
             lobbyManipulationRequests[ createLobby.SourceJobID ] = createLobby.Body;
-            return new AsyncJob<CreateLobbyCallback>( Client, createLobby.SourceJobID );
+            return MonitorJob( new AsyncJob<CreateLobbyCallback>( Client, createLobby.SourceJobID ) );
         }
 
         /// <summary>
@@ -105,7 +106,7 @@ namespace SteamKit2
             Send( setLobbyData, appId );
 
             lobbyManipulationRequests[ setLobbyData.SourceJobID ] = setLobbyData.Body;
-            return new AsyncJob<SetLobbyDataCallback>( Client, setLobbyData.SourceJobID );
+            return MonitorJob( new AsyncJob<SetLobbyDataCallback>( Client, setLobbyData.SourceJobID ) );
         }
 
         /// <summary>
@@ -136,7 +137,7 @@ namespace SteamKit2
             Send( setLobbyData, appId );
 
             lobbyManipulationRequests[ setLobbyData.SourceJobID ] = setLobbyData.Body;
-            return new AsyncJob<SetLobbyDataCallback>( Client, setLobbyData.SourceJobID );
+            return MonitorJob( new AsyncJob<SetLobbyDataCallback>( Client, setLobbyData.SourceJobID ) );
         }
 
         /// <summary>
@@ -162,7 +163,7 @@ namespace SteamKit2
             Send( setLobbyOwner, appId );
 
             lobbyManipulationRequests[ setLobbyOwner.SourceJobID ] = setLobbyOwner.Body;
-            return new AsyncJob<SetLobbyOwnerCallback>( Client, setLobbyOwner.SourceJobID );
+            return MonitorJob( new AsyncJob<SetLobbyOwnerCallback>( Client, setLobbyOwner.SourceJobID ) );
         }
 
         /// <summary>
@@ -201,7 +202,7 @@ namespace SteamKit2
 
             Send( getLobbies, appId );
 
-            return new AsyncJob<GetLobbyListCallback>( Client, getLobbies.SourceJobID );
+            return MonitorJob( new AsyncJob<GetLobbyListCallback>( Client, getLobbies.SourceJobID ) );
         }
 
         /// <summary>
@@ -232,7 +233,7 @@ namespace SteamKit2
 
             Send( joinLobby, appId );
 
-            return new AsyncJob<JoinLobbyCallback>( Client, joinLobby.SourceJobID );
+            return MonitorJob( new AsyncJob<JoinLobbyCallback>( Client, joinLobby.SourceJobID ) );
         }
 
         /// <summary>
@@ -255,7 +256,7 @@ namespace SteamKit2
 
             Send( leaveLobby, appId );
 
-            return new AsyncJob<LeaveLobbyCallback>( Client, leaveLobby.SourceJobID );
+            return MonitorJob( new AsyncJob<LeaveLobbyCallback>( Client, leaveLobby.SourceJobID ) );
         }
 
         /// <summary>
@@ -278,7 +279,7 @@ namespace SteamKit2
 
             Send( getLobbyData, appId );
 
-            return new AsyncJob<LobbyDataCallback>( Client, getLobbyData.SourceJobID );
+            return MonitorJob( new AsyncJob<LobbyDataCallback>( Client, getLobbyData.SourceJobID ) );
         }
 
         /// <summary>
@@ -346,6 +347,16 @@ namespace SteamKit2
             {
                 handler( packetMsg );
             }
+        }
+
+        AsyncJob<T> MonitorJob<T>( AsyncJob<T> job )
+            where T : CallbackMsg
+        {
+            job.ToTask().ContinueWith( task =>
+            {
+                lobbyManipulationRequests.TryRemove( job.JobID, out _ );
+            }, TaskContinuationOptions.NotOnRanToCompletion );
+            return job;
         }
 
         #region ClientMsg Handlers
