@@ -357,6 +357,9 @@ namespace SteamKit2
         AsyncJob<T> AttachIncompleteManipulationHandler<T>( AsyncJob<T> job )
             where T : CallbackMsg
         {
+            // Manipulation requests typically complete (and are removed from lobbyManipulationRequests) when
+            // a message is handled. However, jobs can also be faulted, or be cancelled (e.g. when SteamClient
+            // disconnects.) Thus, when a job fails we remove the JobID/request from lobbyManipulationRequests.
             job.ToTask().ContinueWith( task =>
             {
                 lobbyManipulationRequests.TryRemove( job.JobID, out _ );
