@@ -202,6 +202,41 @@ namespace SteamKit2
         }
 
         /// <summary>
+        /// This callback is fired when a lobby chat message is received.
+        /// </summary>
+        public sealed class LobbyChatCallback : CallbackMsg
+        {
+            /// <summary>
+            /// ID of the app the updated lobby belongs to.
+            /// </summary>
+            public uint AppID { get; }
+
+            /// <summary>
+            /// The lobby that was updated.
+            /// </summary>
+            public Lobby Lobby { get; }
+
+            /// <summary>
+            /// The Steam ID of the user who sent the message.
+            /// </summary>
+            public SteamID SenderSteamID { get; }
+
+            /// <summary>
+            /// The message body.
+            /// </summary>
+            public byte[] Message { get; }
+
+            internal LobbyChatCallback( JobID jobId, uint appId, Lobby lobby, SteamID senderSteamId, byte[] message )
+            {
+                JobID = jobId;
+                AppID = appId;
+                Lobby = lobby;
+                SenderSteamID = senderSteamId;
+                Message = message;
+            }
+        }
+
+        /// <summary>
         /// This callback is fired whenever Steam informs us a user has joined a lobby.
         /// </summary>
         public sealed class UserJoinedLobbyCallback : CallbackMsg

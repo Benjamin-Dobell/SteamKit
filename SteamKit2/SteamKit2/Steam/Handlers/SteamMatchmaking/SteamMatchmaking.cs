@@ -26,6 +26,7 @@ namespace SteamKit2
                 { EMsg.ClientMMSSetLobbyDataResponse, HandleSetLobbyDataResponse },
                 { EMsg.ClientMMSSetLobbyOwnerResponse, HandleSetLobbyOwnerResponse },
                 { EMsg.ClientMMSLobbyData, HandleLobbyData },
+                { EMsg.ClientMMSLobbyChatMsg, HandleLobbyChat },
                 { EMsg.ClientMMSGetLobbyListResponse, HandleGetLobbyListResponse },
                 { EMsg.ClientMMSJoinLobbyResponse, HandleJoinLobbyResponse },
                 { EMsg.ClientMMSLeaveLobbyResponse, HandleLeaveLobbyResponse },
@@ -164,6 +165,38 @@ namespace SteamKit2
 
             lobbyManipulationRequests[ setLobbyOwner.SourceJobID ] = setLobbyOwner.Body;
             return AttachIncompleteManipulationHandler( new AsyncJob<SetLobbyOwnerCallback>( Client, setLobbyOwner.SourceJobID ) );
+        }
+
+        /// <summary>
+        /// Sends a lobby chat message.
+        /// </summary>
+        /// <param name="appId">ID of app the lobby belongs to.</param>
+        /// <param name="lobbySteamId">The SteamID of the lobby that the message should be delivered within.</param>
+        /// <param name="targetSteamId">The SteamID of the user that the message is concerning, or a nil (zero) Steam ID.</param>
+        /// <param name="message">The message body. Its length must be greater than zero and cannot exceed 4KB.</param>
+        /// <returns>An <see cref="AsyncJob{LobbyChatCallback}"/> if the message length is valid, otherwise <c>null</c>.</returns>
+        public AsyncJob<LobbyChatCallback> SendChat( uint appId, SteamID lobbySteamId, SteamID targetSteamId, byte[] message )
+        {
+            if ( message.Length == 0 || message.Length > 4096 )
+            {
+                return null;
+            }
+
+            var sendChat = new ClientMsgProtobuf<CMsgClientMMSSendLobbyChatMsg>( EMsg.ClientMMSSendLobbyChatMsg )
+            {
+                Body =
+                {
+                    app_id = appId,
+                    steam_id_lobby = lobbySteamId,
+                    steam_id_target = targetSteamId,
+                    lobby_message = message
+                },
+                SourceJobID = Client.GetNextJobID()
+            };
+
+            Send( sendChat, appId );
+
+            return new AsyncJob<LobbyChatCallback>( Client, sendChat.SourceJobID );
         }
 
         /// <summary>
@@ -582,12 +615,12 @@ namespace SteamKit2
 
         void HandleLobbyData( IPacketMsg packetMsg )
         {
-            var lobbyListResponse = new ClientMsgProtobuf<CMsgClientMMSLobbyData>( packetMsg );
-            var body = lobbyListResponse.Body;
+            var lobbyData = new ClientMsgProtobuf<CMsgClientMMSLobbyData>( packetMsg );
+            var body = lobbyData.Body;
 
-            var cachedLobby = lobbyCache.GetLobby( body.app_id, body.steam_id_lobby );
+            var lobby = lobbyCache.GetLobby( body.app_id, body.steam_id_lobby );
             var members = body.members.Count == 0
-                ? cachedLobby.Members
+                ? lobby.Members
                 : body.members.ConvertAll( member => new Lobby.Member(
                     member.steam_id,
                     member.persona_name,
@@ -603,17 +636,36 @@ namespace SteamKit2
                 body.max_members,
                 body.num_members,
                 members,
-                cachedLobby?.Distance,
-                cachedLobby?.Weight
+                lobby?.Distance,
+                lobby?.Weight
             );
 
             lobbyCache.CacheLobby( body.app_id, updatedLobby );
 
             Client.PostCallback( new LobbyDataCallback(
-                lobbyListResponse.TargetJobID,
+                lobbyData.TargetJobID,
                 body.app_id,
                 updatedLobby
             ) );
+        }
+
+        void HandleLobbyChat( IPacketMsg packetMsg )
+        {
+            var lobbyChat = new ClientMsgProtobuf<CMsgClientMMSLobbyChatMsg>( packetMsg );
+            var body = lobbyChat.Body;
+
+            var lobby = lobbyCache.GetLobby( body.app_id, body.steam_id_lobby );
+
+            if ( lobby != null )
+            {
+                Client.PostCallback( new LobbyChatCallback(
+                    lobbyChat.TargetJobID,
+                    body.app_id,
+                    lobby,
+                    body.steam_id_sender,
+                    body.lobby_message
+                ) );
+            }
         }
 
         void HandleUserJoinedLobby( IPacketMsg packetMsg )
